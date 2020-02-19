@@ -1,7 +1,9 @@
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -30,14 +32,29 @@ public class Cryptography {
 		// Vérifier taille de la clé
 		if(key.length == 24)
 		{
-			Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+			Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
 			secretKey = new SecretKeySpec(key, "AES");
             cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+            
+            // Ce que je dois faire :
+            	
+            // --> Découper mes blocs
+            // --> Vérifier qu'il y en ai au moins 1
+            // --> Générer l'IV
+            // --> Opération Xor avant chaque encryption, premièrement avec l'IV puis avec le ciphertext précédent pour les prochains
+            // --> Encryption
+            // --> Recoller les blocs chiffrés
+            // --> Renvoyer les blocs chiffrés
             
 		}
 		else
 			System.out.println("La clé doit faire une taille de 24 octets(192bits), or elle fait "+key.length+" octets");
 		return null;
+	}
+	
+	public static byte[] encryptOneBloc(byte[] bloc, Cipher cipher) throws IllegalBlockSizeException, BadPaddingException
+	{
+		return cipher.doFinal(bloc);
 	}
 	
 	public static byte[][] divideMessagesInNBlocs(byte[] plaintext)
@@ -61,6 +78,7 @@ public class Cryptography {
 			result[j][i % BLOC_SIZE_OCT] = plaintext[i];
 			
 		}
+		// Faut-il rajouter le padding à la main ?
 		return result;
 	}
 }
