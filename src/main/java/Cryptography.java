@@ -146,7 +146,7 @@ public class Cryptography {
     }
 
     // Transforme une chaîne de caractère (hexadécimal) en tableau d'octets
-    public static byte[] hexStringToByteArray(String hex) {
+    private static byte[] hexStringToByteArray(String hex) {
         // Initialisation d'un nouveau tableau avec une taille 2 fois moins grande que celle de la chaîne en paramètre
         byte[] data = new byte[hex.length()/2];
         // Remplit le nouveau tableau d'octets
