@@ -28,7 +28,7 @@ public class Main {
         System.out.println(Arrays.toString(args));
         System.out.println(Arguments.getEncryptionType(args));
         System.out.println(Arguments.getKey(args));
-        System.out.println(Arguments.getInputFile(args));
-        System.out.println(Arguments.getOutputFile(args));
+        System.out.println(Arguments.getFile(args, true));
+        System.out.println(Arguments.getFile(args, false));
     }
 }
