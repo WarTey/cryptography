@@ -24,5 +24,11 @@ public class Main {
 
         System.out.println(Arrays.toString(dFileData));
         System.out.println(dFileData.length);
+
+        System.out.println(Arrays.toString(args));
+        System.out.println(Arguments.getEncryptionType(args));
+        System.out.println(Arguments.getKey(args));
+        System.out.println(Arguments.getInputFile(args));
+        System.out.println(Arguments.getOutputFile(args));
     }
 }
