@@ -2,8 +2,6 @@ import java.util.regex.Pattern;
 
 public class Arguments {
 
-    // Déclaration du message lorsque les arguments sont invalides
-    private static final String ERROR = "Error arguments";
     // Regex pour vérifier la clé
     private static final String REGEX_KEY = "[0-9a-fA-F]{48}";
 
@@ -18,8 +16,8 @@ public class Arguments {
             else if (arg.equals("-dec"))
                 return "decryption";
         }
-        // Renvoie une erreur si rien
-        return ERROR;
+        // Renvoie null si rien
+        return null;
     }
 
     public static String getKey(String[] args) {
@@ -31,8 +29,8 @@ public class Arguments {
                 if (args[i+1] != null && args[i+1].length() == 48 && Pattern.matches(REGEX_KEY, args[i+1]))
                     // Retourne la clé
                     return args[i+1];
-        // Renvoie une erreur si rien
-        return ERROR;
+        // Renvoie null si rien
+        return null;
     }
 
     public static String getFile(String[] args, Boolean isInputFile) {
@@ -43,7 +41,7 @@ public class Arguments {
                 // Vérifie le l'argument suivant existe et renvoie sa valeur
                 if (args[i+1] != null && args[i+1].length() > 0)
                     return args[i+1];
-        // Renvoie une erreur si rien
-        return ERROR;
+        // Renvoie null si rien
+        return null;
     }
 }
