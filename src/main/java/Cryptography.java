@@ -20,7 +20,7 @@ public class Cryptography {
         byte[] IV = new byte[BLOCK_SIZE];
         // Récupération de ce dernier dans les données du fichier (les 16 derniers octets)
         System.arraycopy(fileData, fileData.length - IV.length, IV, 0, IV.length);
-        // Renvoie de l'IV
+        // Renvoie l'IV
         return IV;
     }
 
@@ -32,7 +32,7 @@ public class Cryptography {
             for (int i = 0; i < fileData.length; i++)
                 // Calcul du résultat entre 2 octets
                 fileData[i] = (byte) (0xff & ((int) fileData[i]) ^ ((int) previous[i]));
-        // Renvoie du résultat
+        // Renvoie le résultat
         return fileData;
     }
 
@@ -51,7 +51,7 @@ public class Cryptography {
         byte[] newFileData = new byte[fileData.length - paddingValue];
         // Copie des données du fichier sans le padding
         System.arraycopy(fileData, 0, newFileData, 0, newFileData.length);
-        // Renvoie des nouvelles données
+        // Renvoie les nouvelles données
         return newFileData;
     }
 
@@ -80,7 +80,7 @@ public class Cryptography {
 
 		// Initialise le tableau vide du vecteur d'initialisation
     	byte[] IV = new byte[BLOCK_SIZE];
-    	// Remplit le tableau avec des valeurs aléatoires
+    	// Remplie le tableau avec des valeurs aléatoires
 		new SecureRandom().nextBytes(IV);
 
 		// Initialisation d'un tableau avec les données du fichier plus le padding
@@ -96,7 +96,7 @@ public class Cryptography {
 			System.arraycopy(cipher.doFinal(xor(tempData[0], (i == 0) ? IV : tempData[1])), 0, tempData[0], 0, tempData[0].length);
 			// On sauvegarde le résultat dans le tableau '1' pour le tour suivant
 			System.arraycopy(tempData[0], 0, tempData[1], 0, tempData[0].length);
-			// Renvoie du tableau '0' dans le tableau d'origine (contenant les données du fichier)
+			// Renvoie le tableau '0' dans le tableau d'origine (contenant les données du fichier)
 			System.arraycopy(tempData[0], 0, newFileData, i, tempData[0].length);
 		}
 
@@ -125,7 +125,7 @@ public class Cryptography {
 		// Copie les données chiffrées sans l'IV
         System.arraycopy(fileData, 0, newFileData, 0, newFileData.length);
 
-        // Tableau permettant de garder une copie du copie pendant le processus
+        // Tableau permettant de garder une copie du bloc pendant le processus
         byte[] tampon = new byte[BLOCK_SIZE];
         // Initialisation de deux tableaux permettant de conserver les blocs pour les étapes suivantes
         byte[][] tempData = new byte[2][BLOCK_SIZE];
@@ -138,20 +138,20 @@ public class Cryptography {
             // Met à jour les données fu fichier avec le chiffrement AES suivi du résultat du XOR
             // S'il s'agit de la première itération alors on XOR avec l'IV sinon avec le bloc précédent
             System.arraycopy(xor(cipher.doFinal(tempData[0]), (i == 0) ? IV : tempData[1]), 0, newFileData, i, tempData[0].length);
-            // Récupère le bloc sauvegarder dans tampon pour l'utilser au prochain tour
+            // Récupère le bloc sauvegardé dans tampon pour l'utiliser au prochain tour
             System.arraycopy(tampon, 0, tempData[1], 0, tempData[1].length);
         }
         // Renvoie les données déchiffrées sans le padding
         return removePadding(newFileData);
     }
 
-    // Transforme une chaîne de caractère (hexadécimal) en tableau d'octets
+    // Transforme une chaîne de caractères (hexadécimaux) en tableau d'octets
     private static byte[] hexStringToByteArray(String hex) {
         // Initialisation d'un nouveau tableau avec une taille 2 fois moins grande que celle de la chaîne en paramètre
         byte[] data = new byte[hex.length()/2];
-        // Remplit le nouveau tableau d'octets
+        // Remplie le nouveau tableau d'octets
         for (int i = 0; i < hex.length(); i += 2)
-            // Change la valeur hexadécimal en octet
+            // Change la valeur hexadécimale en octet
             data[i/2] = (byte) ((Character.digit(hex.charAt(i), BLOCK_SIZE) << 4) + Character.digit(hex.charAt(i+1), BLOCK_SIZE));
         // Renvoie le tableau d'octets
         return data;

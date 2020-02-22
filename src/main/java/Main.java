@@ -15,7 +15,7 @@ public class Main {
         String space = "    ";
         // Exemple d'usage: filecrypt -enc|-dec -key K..K -in <input file> -out <output file>
         String errorMessage = "Example usage:\n";
-        errorMessage += space + "filecrypt -enc|-dec -key K..K -in <input file> -out <output file>\n\n";
+        errorMessage += space + "java -jar release-X.jar -enc|-dec -key K..K -in <input file> -out <output file>\n\n";
         // Description des arguments (à quoi ils correspondent)
         errorMessage += "Arguments:\n";
         errorMessage += space + "-enc: encryption\n";
@@ -23,7 +23,7 @@ public class Main {
         errorMessage += space + "-key: secret key (48 characters)\n";
         errorMessage += space + "-in: input file\n";
         errorMessage += space + "-out: output file (different from the input file)\n";
-        // Renvoie du message d'aide
+        // Renvoie le message d'aide
         return errorMessage;
     }
 
@@ -46,7 +46,7 @@ public class Main {
         String inputFile = Arguments.getFile(args, true);
         String outputFile = Arguments.getFile(args, false);
 
-        // Vérifie que les arguments existe
+        // Vérifie que les arguments existent
         if (encryptionType != null && key != null && inputFile != null && outputFile != null && !inputFile.equals(outputFile)) {
             // Initialise le fichier d'entrée et de sortie
             File fileInput = new File(inputFile);
