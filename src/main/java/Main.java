@@ -15,7 +15,7 @@ public class Main {
         String space = "    ";
         // Exemple d'usage: filecrypt -enc|-dec -key K..K -in <input file> -out <output file>
         String errorMessage = "Example usage:\n";
-        errorMessage += space + "filecrypt -enc|-dec -key K..K -in <input file> -out <output file>\n\n";
+        errorMessage += space + "java -jar release-X.jar -enc|-dec -key K..K -in <input file> -out <output file>\n\n";
         // Description des arguments (à quoi ils correspondent)
         errorMessage += "Arguments:\n";
         errorMessage += space + "-enc: encryption\n";
