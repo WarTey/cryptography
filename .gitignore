@@ -1,6 +1,6 @@
 
-# Created by https://www.gitignore.io/api/linux,macos,windows,eclipse,intellij
-# Edit at https://www.gitignore.io/?templates=linux,macos,windows,eclipse,intellij
+# Created by https://www.gitignore.io/api/linux,macos,gradle,windows,eclipse,intellij
+# Edit at https://www.gitignore.io/?templates=linux,macos,gradle,windows,eclipse,intellij
 
 ### Eclipse ###
 .metadata
@@ -228,4 +228,23 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# End of https://www.gitignore.io/api/linux,macos,windows,eclipse,intellij
+### Gradle ###
+.gradle
+build/
+
+# Ignore Gradle GUI config
+gradle-app.setting
+
+# Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
+!gradle-wrapper.jar
+
+# Cache of project
+.gradletasknamecache
+
+# # Work around https://youtrack.jetbrains.com/issue/IDEA-116898
+# gradle/wrapper/gradle-wrapper.properties
+
+### Gradle Patch ###
+**/build/
+
+# End of https://www.gitignore.io/api/linux,macos,gradle,windows,eclipse,intellij
