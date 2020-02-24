@@ -149,7 +149,7 @@ public class Cryptography {
     private static byte[] hexStringToByteArray(String hex) {
         // Initialisation d'un nouveau tableau avec une taille 2 fois moins grande que celle de la chaîne en paramètre
         byte[] data = new byte[hex.length()/2];
-        // Remplie le nouveau tableau d'octets
+        // Remplis le nouveau tableau d'octets
         for (int i = 0; i < hex.length(); i += 2)
             // Change la valeur hexadécimale en octet
             data[i/2] = (byte) ((Character.digit(hex.charAt(i), BLOCK_SIZE) << 4) + Character.digit(hex.charAt(i+1), BLOCK_SIZE));
