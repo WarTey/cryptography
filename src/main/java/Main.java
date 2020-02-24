@@ -14,7 +14,7 @@ public class Main {
     private static String helpArguments () {
         String space = "    ";
         // Exemple d'usage: filecrypt -enc|-dec -key K..K -in <input file> -out <output file>
-        String errorMessage = "Example usage:\n";
+        String errorMessage = "\nExample usage:\n";
         errorMessage += space + "java -jar release-X.jar -enc|-dec -key K..K -in <input file> -out <output file>\n\n";
         // Description des arguments (à quoi ils correspondent)
         errorMessage += "Arguments:\n";
@@ -51,29 +51,32 @@ public class Main {
             // Initialise le fichier d'entrée et de sortie
             File fileInput = new File(inputFile);
             File fileOutput = new File(outputFile);
-            // Vérifie que le fichier d'entrée existe
-            if (fileInput.exists()) {
+            // Vérifie que le fichier d'entrée existe et qu'il s'agisse bien d'un fichier
+            if (fileInput.exists() && fileInput.isFile()) {
                 // Vérifie que le fichier de sortie n'existe pas
                 if (!fileOutput.exists())
                     // Lance de processus de chiffrement/déchiffrement
                     process(fileInput, fileOutput, encryptionType, key);
                 else {
-                    String answer;
-                    // Demande à l'utilisateur s'il est possible d'écraser le fichier de sortie
-                    do {
-                        System.out.println("Attention, le fichier de sortie existe déjà. Voulez-vous l'écraser? (Y/N)");
-                        // Récupère l'entrée de l'utilisateur
-                        answer = new Scanner(System.in).next();
-                    } while (!answer.equals("Y") && !answer.equals("N"));
-                    // Selon sa réponse lance le processus ou arrête de programme
-                    if (answer.equals("Y"))
-                        process(fileInput, fileOutput, encryptionType, key);
-                    else
-                        System.out.println("Processus interrompu.");
+                    if (fileOutput.isFile()) {
+                        String answer;
+                        // Demande à l'utilisateur s'il est possible d'écraser le fichier de sortie
+                        do {
+                            System.out.println("Attention, le fichier de sortie existe déjà. Voulez-vous l'écraser? (Y/N)");
+                            // Récupère l'entrée de l'utilisateur
+                            answer = new Scanner(System.in).next();
+                        } while (!answer.equals("Y") && !answer.equals("N"));
+                        // Selon sa réponse lance le processus ou arrête de programme
+                        if (answer.equals("Y") && fileOutput.isFile())
+                            process(fileInput, fileOutput, encryptionType, key);
+                        else
+                            System.out.println("Processus interrompu.");
+                    } else
+                        System.out.println("Attention, le fichier de sortie est un dossier.");
                 }
             } else
                 // Affiche un message si le fichier d'entrée n'existe pas
-                System.out.println("Attention, le fichier d'entrée n'existe pas.");
+                System.out.println("Attention, le fichier d'entrée n'existe pas ou il s'agit d'un dossier.");
         } else
             // Affiche un message d'aide si les arguments sont incorrects
             System.out.println(helpArguments());
