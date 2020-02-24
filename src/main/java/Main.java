@@ -27,7 +27,7 @@ public class Main {
         return errorMessage;
     }
 
-    private static void process(File fileInput, File fileOutput, String encryptionType, String key) throws IOException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException {
+    private static void process(File fileInput, File fileOutput, String encryptionType, String key) throws IOException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, FileIntegrityException {
         // Récupère les données du fichier
         byte[] fileData = Files.readAllBytes(fileInput.toPath());
         // Selon le mode choisi dans les arguments, lance le chiffrement ou déchiffrement
