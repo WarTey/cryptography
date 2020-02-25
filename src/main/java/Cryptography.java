@@ -28,13 +28,13 @@ public class Cryptography {
         return new SecretKeySpec(key, "AES");
     }
     
-    // Renvoie le MAC
+    // Renvoie le MAC stocké dans les données du fichier
     private static byte[] getMAC(byte[] fileData) {
-        // Initialisation du vecteur d'initialisation avec la taille correspondante
+        // Initialisation du MAC avec la taille correspondante
         byte[] MAC = new byte[MAC_SIZE];
-        // Récupération de ce dernier dans les données du fichier (les 16 derniers octets)
+        // Récupération de ce dernier dans les données du fichier(situé à la fin de filedata)
         System.arraycopy(fileData, fileData.length - MAC.length, MAC, 0, MAC.length);
-        // Renvoie l'IV
+        // Renvoie le MAC
         return MAC;
     }
     
@@ -42,7 +42,7 @@ public class Cryptography {
     private static byte[] getIV(byte[] fileData) {
         // Initialisation du vecteur d'initialisation avec la taille correspondante
         byte[] IV = new byte[BLOCK_SIZE];
-        // Récupération de ce dernier dans les données du fichier (les 16 derniers octets)
+        // Récupération de ce dernier dans les données du fichier (situé avant le MAC dans filedata)
         System.arraycopy(fileData, fileData.length - IV.length - MAC_SIZE, IV, 0, IV.length);
         // Renvoie l'IV
         return IV;
@@ -98,18 +98,19 @@ public class Cryptography {
 	public static byte[] encrypt(byte[] fileData, String key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
 		// On définit notre clé passé en paramètre comme clé maître
 		byte[] masterKey = hexStringToByteArray(key);
-		// On dérive cette clé maître en 2 sous clés :
-		// La clé de chiffrement utilisé par AES-192 : 24 octets
+		// On dérive cette clé maître en 2 sous clés grâce à un HKDF :
+		// La clé de chiffrement utilisée par AES-192 : 24 octets
 		byte[] encKey = HKDF.fromHmacSha256().expand(masterKey, "encKey".getBytes(StandardCharsets.UTF_8), 24);
-		// La clé d'authentification utilisé pour calculer le CMAC : 16 octets
-		byte[] authKey = HKDF.fromHmacSha256().expand(masterKey, "authKey".getBytes(StandardCharsets.UTF_8), 16);
-		
-		KeyParameter authKeyP = new KeyParameter(authKey);
-
+		// La clé d'intégrité utilisée pour calculer le CMAC : 16 octets
+		byte[] integrityKey = HKDF.fromHmacSha256().expand(masterKey, "authKey".getBytes(StandardCharsets.UTF_8), 16);
+		// Création du KeyParameter avec la clé d'intégrité utilisé par la lib Bounty Castle
+		KeyParameter integrityKeyP = new KeyParameter(integrityKey);
+		// Initialisation du cipher utilisé pour le calcul du CMAC
 		BlockCipher macCipher = new AESEngine();
+		// Création de l'instance du MAC en CMAC utilisant le mac Cipher et générant un MAC de MAC_SIZE octets
 		Mac mac = new CMac(macCipher, MAC_SIZE * 8);
-
-		mac.init(authKeyP);
+		// Initialisation du mac avec la clé d'intégrité
+		mac.init(integrityKeyP);
 				
 		// Initialisation de l'algorithme de chiffrement
         // Ici ECB mais application des étapes nécessaires pour faire un CBC avec un padding
@@ -146,19 +147,19 @@ public class Cryptography {
 		// On ajoute l'IV à la fin
 		System.arraycopy(IV, 0, newFileDataIV, newFileData.length, IV.length);
 		
-		
-		//Calcul du HMAC du ciphertext + iv
+		// Préparation du CMAC avec les données suivantes : ciphertext || iv
 		mac.update(newFileDataIV,0,newFileDataIV.length);
+		// Initialisation du tableau qui récupérera le CMAC
 		byte[] macResult = new byte[mac.getMacSize()];
+		// Calcul du CMAC et nous donne le résultat dans le tableau macResult
 		mac.doFinal(macResult, 0);
-		
-		
-		// Initialisation d'un nouveau tableau qui contiendra les données chiffrées, l'IV et le HMAC
+				
+		// Initialisation d'un nouveau tableau qui contiendra les données chiffrées, l'IV et le CMAC
 		byte[] newFileDataIVHmac = new byte[newFileDataIV.length + MAC_SIZE];
 		
 		// Copie du ciphertext et IV dans ce nouveau tableau
 		System.arraycopy(newFileDataIV, 0, newFileDataIVHmac, 0, newFileDataIV.length);
-		// Copie du HMAC à la fin du tableau
+		// Copie du CMAC à la fin du tableau
 		System.arraycopy(macResult, 0, newFileDataIVHmac, newFileDataIV.length, macResult.length);
 
 		return newFileDataIVHmac;
@@ -168,18 +169,19 @@ public class Cryptography {
     public static byte[] decrypt(byte[] fileData, String key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, FileIntegrityException {
     	// On définit notre clé passé en paramètre comme clé maître
 		byte[] masterKey = hexStringToByteArray(key);
-		// On dérive cette clé maître en 2 sous clés :
-		// La clé de chiffrement utilisé par AES-192 : 24 octets
+		// On dérive cette clé maître en 2 sous clés grâce à un HKDF :
+		// La clé de chiffrement utilisée par AES-192 : 24 octets
 		byte[] encKey = HKDF.fromHmacSha256().expand(masterKey, "encKey".getBytes(StandardCharsets.UTF_8), 24);
-		// La clé d'authentification utilisé pour calculer le CMAC : 16 octets
-		byte[] authKey = HKDF.fromHmacSha256().expand(masterKey, "authKey".getBytes(StandardCharsets.UTF_8), 16);
-		
-		KeyParameter authKeyP = new KeyParameter(authKey);
-
+		// La clé d'intégrité utilisée pour calculer le CMAC : 16 octets
+		byte[] integrityKey = HKDF.fromHmacSha256().expand(masterKey, "authKey".getBytes(StandardCharsets.UTF_8), 16);
+		// Création du KeyParameter avec la clé d'intégrité utilisé par la lib Bounty Castle
+		KeyParameter integrityKeyP = new KeyParameter(integrityKey);
+		// Initialisation du cipher utilisé pour le calcul du CMAC
 		BlockCipher macCipher = new AESEngine();
+		// Création de l'instance du MAC en CMAC utilisant le mac Cipher et générant un MAC de MAC_SIZE octets
 		Mac mac = new CMac(macCipher, MAC_SIZE * 8);
-
-		mac.init(authKeyP);
+		// Initialisation du mac avec la clé d'intégrité
+		mac.init(integrityKeyP);
     	
         // Initialisation de l'algorithme de déchiffrement
         // Ici ECB mais application des étapes nécessaires pour faire un CBC avec un padding
@@ -189,23 +191,24 @@ public class Cryptography {
 
         // Récupération de l'IV à la fin des données chiffrées
         byte[] IV = getIV(fileData);
-        // Récupération du MAC
+        // Récupération du CMAC
         byte[] receivedMAC = getMAC(fileData);
         
         // Récupération du ciphertext et de l'IV
         byte[] cipherTextAndIV = new byte[fileData.length - MAC_SIZE];
         System.arraycopy(fileData, 0, cipherTextAndIV, 0, fileData.length - MAC_SIZE);
-        // Calcul du MAC
-  		mac.update(cipherTextAndIV,0,cipherTextAndIV.length);
-  		byte[] macResult = new byte[mac.getMacSize()];
-  		mac.doFinal(macResult, 0);
+		// Préparation du CMAC avec les données suivantes : ciphertext || iv
+		mac.update(cipherTextAndIV,0,cipherTextAndIV.length);
+		// Initialisation du tableau qui récupérera le CMAC
+		byte[] macResult = new byte[mac.getMacSize()];
+		// Calcul du CMAC et nous donne le résultat dans le tableau macResult
+		mac.doFinal(macResult, 0);
   		
-  		// On compare le hmac précédent et celui calculé
+  		// On compare le CMAC récupéré dans le fichier et celui calculé
 			// si c'est le même on peut déchiffrer le ciphertext
-			// sinon : probleme d'intégrité, le ciphertext a été altéré, ce n'est pas la peine de tenter de déchiffrer ce fichier, il faut le redemander.
+			// sinon : probleme d'intégrité, le ciphertext et/ou l'IV a été altéré, ce n'est pas la peine de tenter de déchiffrer ce fichier, il faut le redemander.
 		if(!MessageDigest.isEqual(receivedMAC, macResult))
-			throw new FileIntegrityException();    
-        
+			throw new FileIntegrityException();        
 		
         // Initialisation d'un tableau pour les données chiffrées sans l'IV
 		byte[] newFileData = new byte[fileData.length - BLOCK_SIZE - MAC_SIZE];
