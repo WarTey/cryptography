@@ -14,18 +14,18 @@ repositories {
 jar {
     from {
         configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
     }
     manifest {
         attributes("Main-Class": "Main")
     }
     destinationDirectory = file("$rootDir/release")
     archivesBaseName = 'release'
+    exclude 'META-INF/*.SF'
 }
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    // https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk15on
-	compile group: 'org.bouncycastle', name: 'bcprov-jdk15on', version: '1.64'
+    implementation 'org.bouncycastle:bcprov-jdk15on:1.64'
 	implementation 'at.favre.lib:hkdf:1.1.0'
-    
 }
