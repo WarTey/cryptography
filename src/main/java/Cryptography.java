@@ -1,4 +1,14 @@
-import javax.crypto.*;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Arrays;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.crypto.BlockCipher;
@@ -8,12 +18,6 @@ import org.bouncycastle.crypto.macs.CMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 
 import at.favre.lib.crypto.HKDF;
-
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidKeyException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 
 public class Cryptography {
 
@@ -167,7 +171,12 @@ public class Cryptography {
 		System.arraycopy(newFileDataIV, 0, newFileDataIVHmac, 0, newFileDataIV.length);
 		// Copie du CMAC à la fin du tableau
 		System.arraycopy(macResult, 0, newFileDataIVHmac, newFileDataIV.length, macResult.length);
-
+		
+		// On efface les données des clés en mémoire
+		Arrays.fill(masterKey, (byte) 0);
+		Arrays.fill(encKey, (byte) 0);
+		Arrays.fill(integrityKey, (byte) 0);
+		
 		return newFileDataIVHmac;
 	}
 
@@ -237,6 +246,13 @@ public class Cryptography {
             // Récupère le bloc sauvegardé dans tampon pour l'utiliser au prochain tour
             System.arraycopy(tampon, 0, tempData[1], 0, tempData[1].length);
         }
+        
+        // On efface les données des clés en mémoire
+ 		Arrays.fill(masterKey, (byte) 0);
+ 		Arrays.fill(encKey, (byte) 0);
+ 		Arrays.fill(integrityKey, (byte) 0);
+ 		
+ 		
         // Renvoie les données déchiffrées sans le padding
         return removePadding(newFileData);
     }
