@@ -17,10 +17,16 @@ import java.security.SecureRandom;
 
 public class Cryptography {
 
-    // Taille d'un bloc
+	// Taille clé de chiffrement en octet
+	private static final int ENCRYPT_KEY_SIZE = 24;
+	
+	// Taille clé d'intégrité en octet
+	private static final int MAC_KEY_SIZE = 16;
+		
+    // Taille d'un bloc en octet
     private static final int BLOCK_SIZE = 16;
 
-    // Taille d'un mac
+    // Taille d'un mac en octet
     private static final int MAC_SIZE = 16;
 
     // Renvoie la clé secrète en fonction du tableau d'octets
@@ -99,10 +105,10 @@ public class Cryptography {
 		// On définit notre clé passé en paramètre comme clé maître
 		byte[] masterKey = hexStringToByteArray(key);
 		// On dérive cette clé maître en 2 sous clés grâce à un HKDF :
-		// La clé de chiffrement utilisée par AES-192 : 24 octets
-		byte[] encKey = HKDF.fromHmacSha256().expand(masterKey, "encKey".getBytes(StandardCharsets.UTF_8), 24);
-		// La clé d'intégrité utilisée pour calculer le CMAC : 16 octets
-		byte[] integrityKey = HKDF.fromHmacSha256().expand(masterKey, "authKey".getBytes(StandardCharsets.UTF_8), 16);
+		// La clé de chiffrement utilisée par AES-192 : ENCRYPT_KEY_SIZE octets
+		byte[] encKey = HKDF.fromHmacSha256().expand(masterKey, "encKey".getBytes(StandardCharsets.UTF_8), ENCRYPT_KEY_SIZE);
+		// La clé d'intégrité utilisée pour calculer le CMAC : MAC_KEY_SIZE octets
+		byte[] integrityKey = HKDF.fromHmacSha256().expand(masterKey, "integrityKey".getBytes(StandardCharsets.UTF_8), MAC_KEY_SIZE);
 		// Création du KeyParameter avec la clé d'intégrité utilisé par la lib Bounty Castle
 		KeyParameter integrityKeyP = new KeyParameter(integrityKey);
 		// Initialisation du cipher utilisé pour le calcul du CMAC
@@ -170,10 +176,10 @@ public class Cryptography {
     	// On définit notre clé passé en paramètre comme clé maître
 		byte[] masterKey = hexStringToByteArray(key);
 		// On dérive cette clé maître en 2 sous clés grâce à un HKDF :
-		// La clé de chiffrement utilisée par AES-192 : 24 octets
-		byte[] encKey = HKDF.fromHmacSha256().expand(masterKey, "encKey".getBytes(StandardCharsets.UTF_8), 24);
-		// La clé d'intégrité utilisée pour calculer le CMAC : 16 octets
-		byte[] integrityKey = HKDF.fromHmacSha256().expand(masterKey, "authKey".getBytes(StandardCharsets.UTF_8), 16);
+		// La clé de chiffrement utilisée par AES-192 : ENCRYPT_KEY_SIZE octets
+		byte[] encKey = HKDF.fromHmacSha256().expand(masterKey, "encKey".getBytes(StandardCharsets.UTF_8), ENCRYPT_KEY_SIZE);
+		// La clé d'intégrité utilisée pour calculer le CMAC : MAC_KEY_SIZE octets
+		byte[] integrityKey = HKDF.fromHmacSha256().expand(masterKey, "integrityKey".getBytes(StandardCharsets.UTF_8), MAC_KEY_SIZE);
 		// Création du KeyParameter avec la clé d'intégrité utilisé par la lib Bounty Castle
 		KeyParameter integrityKeyP = new KeyParameter(integrityKey);
 		// Initialisation du cipher utilisé pour le calcul du CMAC
