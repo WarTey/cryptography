@@ -70,7 +70,7 @@ public class Main {
                 }
             } else
                 // Affiche un message d'erreur
-                System.out.println("Attention, un des fichiers d'entrées n'existe pas, est un dossier ou correspond au fichier de sortie.");
+                System.out.println("Attention, un des fichiers d'entrées n'existe pas, est un dossier ou correspond au fichier de sortie ou à un des fichiers d'entrées.");
         } else
             // Affiche un message d'aide si les arguments sont incorrects
             System.out.println(Arguments.helpArguments());

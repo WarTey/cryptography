@@ -1,5 +1,6 @@
 import java.io.*;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -7,14 +8,16 @@ public class FileManager {
 
     // Vérifie l'ensemble des fichiers d'entrées
     public static Boolean isInputFilesReady(ArrayList<String> inputFiles, String outputFile) {
+        HashSet<String> duplicate = new HashSet<>();
         // Parcourt les fichiers d'entrées
         for (String inputFile : inputFiles) {
             // Initialise un des fichiers d'entrées
             File fileInput = new File(inputFile);
-            // Vérifie que le fichier existe, ne soit pas un dossier et qu'il soit différent du fichier de sortie
-            if (!fileInput.exists() || !fileInput.isFile() || inputFile.equals(outputFile))
+            // Vérifie que le fichier existe, ne soit pas un dossier, ne soit pas un doublon et qu'il soit différent du fichier de sortie
+            if (!fileInput.exists() || !fileInput.isFile() || inputFile.equals(outputFile) || duplicate.contains(inputFile))
                 // Le fichier n'est pas correct
                 return false;
+            else duplicate.add(inputFile);
         }
         // Les fichiers sont corrects
         return true;
