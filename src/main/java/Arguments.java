@@ -67,4 +67,21 @@ public class Arguments {
         // Renvoie null si rien
         return null;
     }
+
+    // Renvoie l'aide pour les arguments
+    public static String helpArguments () {
+        String space = "    ";
+        // Exemple d'usage: filecrypt -enc|-dec -key K..K -in <input file> -out <output file>
+        String errorMessage = "\nExample usage:\n";
+        errorMessage += space + "java -jar release-X.jar -enc|-dec -key K..K -in <input file> -out <output file>\n\n";
+        // Description des arguments (à quoi ils correspondent)
+        errorMessage += "Arguments:\n";
+        errorMessage += space + "-enc: encryption\n";
+        errorMessage += space + "-dec: decryption\n";
+        errorMessage += space + "-key: secret key (48 characters)\n";
+        errorMessage += space + "-in: input files\n";
+        errorMessage += space + "-out: output file (different from the input file)\n";
+        // Renvoie le message d'aide
+        return errorMessage;
+    }
 }

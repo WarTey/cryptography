@@ -10,23 +10,6 @@ import java.util.Scanner;
 
 public class Main {
 
-    // Renvoie l'aide pour les arguments
-    private static String helpArguments () {
-        String space = "    ";
-        // Exemple d'usage: filecrypt -enc|-dec -key K..K -in <input file> -out <output file>
-        String errorMessage = "\nExample usage:\n";
-        errorMessage += space + "java -jar release-X.jar -enc|-dec -key K..K -in <input file> -out <output file>\n\n";
-        // Description des arguments (à quoi ils correspondent)
-        errorMessage += "Arguments:\n";
-        errorMessage += space + "-enc: encryption\n";
-        errorMessage += space + "-dec: decryption\n";
-        errorMessage += space + "-key: secret key (48 characters)\n";
-        errorMessage += space + "-in: input file\n";
-        errorMessage += space + "-out: output file (different from the input file)\n";
-        // Renvoie le message d'aide
-        return errorMessage;
-    }
-
     private static void process(File fileInput, File fileOutput, String encryptionType, String key) throws IOException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, FileIntegrityException {
         // Récupère les données du fichier
         byte[] fileData = Files.readAllBytes(fileInput.toPath());
@@ -43,8 +26,8 @@ public class Main {
         // Récupère les arguments (type de chiffrement, clé, fichier d'entrée et de sortie)
         String encryptionType = Arguments.getEncryptionType(args);
         String key = Arguments.getKey(args);
-        String inputFile = Arguments.getFile(args, true);
-        String outputFile = Arguments.getFile(args, false);
+        String inputFile = Arguments.getOutputFile(args);
+        String outputFile = Arguments.getOutputFile(args);
 
         // Vérifie que les arguments existent
         if (encryptionType != null && key != null && inputFile != null && outputFile != null && !inputFile.equals(outputFile)) {
@@ -79,6 +62,6 @@ public class Main {
                 System.out.println("Attention, le fichier d'entrée n'existe pas ou il s'agit d'un dossier.");
         } else
             // Affiche un message d'aide si les arguments sont incorrects
-            System.out.println(helpArguments());
+            System.out.println(Arguments.helpArguments());
     }
 }
