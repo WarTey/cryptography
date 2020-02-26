@@ -26,14 +26,12 @@ public class Main {
             File fileInput = new File(inputFile);
             // Récupère les données du fichier
             byte[] fileData = Files.readAllBytes(fileInput.toPath());
-            // Dérive la clé pour éviter d'utiliser la même clé de chiffrement pour tous les fichiers
-            byte[] derivateKey = HKDF.fromHmacSha256().expand(Cryptography.hexStringToByteArray(key), fileInput.getName().getBytes(StandardCharsets.UTF_8), KEY_SIZE);
             // Selon le mode choisi dans les arguments, lance le chiffrement ou déchiffrement
             // Sauvegarde de plus le résultat dans le tableau précédemment créé
             if (encryptionType.equals("encryption"))
-                filesData.add(Cryptography.encrypt(fileData, derivateKey));
+                filesData.add(Cryptography.encrypt(fileData, Cryptography.hexStringToByteArray(key)));
             else if (encryptionType.equals("decryption"))
-                filesData.add(Cryptography.decrypt(fileData, derivateKey));
+                filesData.add(Cryptography.decrypt(fileData, Cryptography.hexStringToByteArray(key)));
         }
         // Crée l'archive avec les données précédentes
         FileManager.createArchive(inputFiles, filesData, fileOutput);
