@@ -1,8 +1,11 @@
+import at.favre.lib.crypto.HKDF;
+
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -10,6 +13,9 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Main {
+
+    // Taille clé dérivée en octet
+    private static final int KEY_SIZE = 24;
 
     private static void process(ArrayList<String> inputFiles, File fileOutput, String encryptionType, String key) throws IOException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, FileIntegrityException {
         // Initialise le tableau contenant l'ensemble des données chiffrées ou déchiffrées
@@ -20,12 +26,14 @@ public class Main {
             File fileInput = new File(inputFile);
             // Récupère les données du fichier
             byte[] fileData = Files.readAllBytes(fileInput.toPath());
+            // Dérive la clé pour éviter d'utiliser la même clé de chiffrement pour tous les fichiers
+            byte[] derivateKey = HKDF.fromHmacSha256().expand(Cryptography.hexStringToByteArray(key), fileInput.getName().getBytes(StandardCharsets.UTF_8), KEY_SIZE);
             // Selon le mode choisi dans les arguments, lance le chiffrement ou déchiffrement
             // Sauvegarde de plus le résultat dans le tableau précédemment créé
             if (encryptionType.equals("encryption"))
-                filesData.add(Cryptography.encrypt(fileData, key));
+                filesData.add(Cryptography.encrypt(fileData, derivateKey));
             else if (encryptionType.equals("decryption"))
-                filesData.add(Cryptography.decrypt(fileData, key));
+                filesData.add(Cryptography.decrypt(fileData, derivateKey));
         }
         // Crée l'archive avec les données précédentes
         FileManager.createArchive(inputFiles, filesData, fileOutput);
