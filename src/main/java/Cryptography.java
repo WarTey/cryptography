@@ -27,7 +27,7 @@ public class Cryptography {
 	
 	// Taille clé d'intégrité en octet
 	private static final int MAC_KEY_SIZE = 16;
-		
+
     // Taille d'un bloc en octet
     private static final int BLOCK_SIZE = 16;
 
@@ -40,15 +40,13 @@ public class Cryptography {
     }
 
     // Dérive la clé en paramètre en deux sous clés (HKDF)
-    private static ArrayList<byte[]> derivateKey(String key) {
-        // On définit notre clé passé en paramètre comme clé maître
-        byte[] masterKey = hexStringToByteArray(key);
-        // On dérive cette clé maître en 2 sous clés grâce à un HKDF :
+    private static ArrayList<byte[]> derivateKey(byte[] masterKey) {
+        // On dérive la clé maître en 2 sous clés grâce à un HKDF :
         // La clé de chiffrement utilisée par AES-192 : ENCRYPT_KEY_SIZE octets
         byte[] encKey = HKDF.fromHmacSha256().expand(masterKey, "encKey".getBytes(StandardCharsets.UTF_8), ENCRYPT_KEY_SIZE);
         // La clé d'intégrité utilisée pour calculer le CMAC : MAC_KEY_SIZE octets
         byte[] integrityKey = HKDF.fromHmacSha256().expand(masterKey, "integrityKey".getBytes(StandardCharsets.UTF_8), MAC_KEY_SIZE);
-        // Renvoie nos deux clés
+        // Renvoie nos clés
         return new ArrayList<>(Arrays.asList(masterKey, encKey, integrityKey));
     }
 
@@ -133,7 +131,7 @@ public class Cryptography {
 	}
 
 	// Processus de chiffrement
-	public static byte[] encrypt(byte[] fileData, String key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+	public static byte[] encrypt(byte[] fileData, byte[] key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
 		// Dérive notre clé en deux sous clés
         // 0 - clé maître, 1 - clé de chiffrement, 2 - clé d'intégrité
         ArrayList<byte[]> keys = derivateKey(key);
@@ -201,7 +199,7 @@ public class Cryptography {
 	}
 
     // Processus de déchiffrement
-    public static byte[] decrypt(byte[] fileData, String key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, FileIntegrityException {
+    public static byte[] decrypt(byte[] fileData, byte[] key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, FileIntegrityException {
         // Dérive notre clé en deux sous clés
         // 0 - clé maître, 1 - clé de chiffrement, 2 - clé d'intégrité
         ArrayList<byte[]> keys = derivateKey(key);
@@ -271,7 +269,7 @@ public class Cryptography {
     }
 
     // Transforme une chaîne de caractères (hexadécimaux) en tableau d'octets
-    private static byte[] hexStringToByteArray(String hex) {
+    public static byte[] hexStringToByteArray(String hex) {
         // Initialisation d'un nouveau tableau avec une taille 2 fois moins grande que celle de la chaîne en paramètre
         byte[] data = new byte[hex.length()/2];
         // Remplis le nouveau tableau d'octets
