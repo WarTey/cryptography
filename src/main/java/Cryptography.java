@@ -117,6 +117,9 @@ public class Cryptography {
 
     // Ajoute un padding aux données du fichier
     private static byte[] addPadding(byte[] fileData) {
+        // Si le nombre d'octets du fichier est un multiple de 16 (taille d'un bloc) alors il n'est pas nécessaire d'ajouter un padding
+        if (fileData.length % 16 == 0)
+            return fileData;
         // Calcul de la taille du padding
 		int paddingValue = BLOCK_SIZE - (fileData.length % BLOCK_SIZE);
         // Initialisation d'un nouveau tableau avec la taille des données plus la valeur du padding
