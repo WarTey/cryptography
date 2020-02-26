@@ -132,9 +132,14 @@ public class Cryptography {
 
 	// Processus de chiffrement
 	public static byte[] encrypt(byte[] fileData, byte[] key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-		// Dérive notre clé en deux sous clés
+        // Initialise le tableau vide du vecteur d'initialisation
+        byte[] IV = new byte[BLOCK_SIZE];
+        // Remplie le tableau avec des valeurs aléatoires
+        new SecureRandom().nextBytes(IV);
+
+        // Dérive notre clé en deux sous clés
         // 0 - clé maître, 1 - clé de chiffrement, 2 - clé d'intégrité
-        ArrayList<byte[]> keys = derivateKey(key);
+        ArrayList<byte[]> keys = derivateKey(HKDF.fromHmacSha256().expand(key, Arrays.toString(IV).getBytes(StandardCharsets.UTF_8), ENCRYPT_KEY_SIZE));
 
         // Création de l'instance du MAC
         Mac mac = initMac(keys.get(2));
@@ -144,11 +149,6 @@ public class Cryptography {
         Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
         // Choix du type (chiffrement) avec initialisation de la clé
 		cipher.init(Cipher.ENCRYPT_MODE, getSecretKey(keys.get(1)));
-
-		// Initialise le tableau vide du vecteur d'initialisation
-    	byte[] IV = new byte[BLOCK_SIZE];
-    	// Remplie le tableau avec des valeurs aléatoires
-		new SecureRandom().nextBytes(IV);
 
 		// Initialisation d'un tableau avec les données du fichier plus le padding
 		byte[] newFileData = addPadding(fileData);
@@ -200,9 +200,14 @@ public class Cryptography {
 
     // Processus de déchiffrement
     public static byte[] decrypt(byte[] fileData, byte[] key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, FileIntegrityException {
+        // Récupération de l'IV à la fin des données chiffrées
+        byte[] IV = getIV(fileData);
+        // Récupération du CMAC
+        byte[] receivedMAC = getMAC(fileData);
+
         // Dérive notre clé en deux sous clés
         // 0 - clé maître, 1 - clé de chiffrement, 2 - clé d'intégrité
-        ArrayList<byte[]> keys = derivateKey(key);
+        ArrayList<byte[]> keys = derivateKey(HKDF.fromHmacSha256().expand(key, Arrays.toString(IV).getBytes(StandardCharsets.UTF_8), ENCRYPT_KEY_SIZE));
 
         // Création de l'instance du MAC
         Mac mac = initMac(keys.get(2));
@@ -212,11 +217,6 @@ public class Cryptography {
         Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
         // Choix du type (déchiffrement) avec initialisation de la clé
         cipher.init(Cipher.DECRYPT_MODE, getSecretKey(keys.get(1)));
-
-        // Récupération de l'IV à la fin des données chiffrées
-        byte[] IV = getIV(fileData);
-        // Récupération du CMAC
-        byte[] receivedMAC = getMAC(fileData);
         
         // Récupération du ciphertext et de l'IV
         byte[] cipherTextAndIV = new byte[fileData.length - MAC_SIZE];
