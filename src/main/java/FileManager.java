@@ -6,6 +6,9 @@ import java.util.zip.ZipOutputStream;
 
 public class FileManager {
 
+    // Nom réservé au chiffrement
+    private static final String RESERVED_NAME = "EncryptData";
+
     // Vérifie l'ensemble des fichiers d'entrées
     public static Boolean isInputFilesReady(ArrayList<String> inputFiles, String outputFile) {
         HashSet<String> duplicate = new HashSet<>();
@@ -14,10 +17,27 @@ public class FileManager {
             // Initialise un des fichiers d'entrées
             File fileInput = new File(inputFile);
             // Vérifie que le fichier existe, ne soit pas un dossier, ne soit pas un doublon et qu'il soit différent du fichier de sortie
-            if (!fileInput.exists() || !fileInput.isFile() || inputFile.equals(outputFile) || duplicate.contains(inputFile))
-                // Le fichier n'est pas correct
+            if (!fileInput.exists()) {
+                // Le fichier n'existe pas
+                System.out.println("Attention, un des fichiers d'entrées n'existe pas (" + fileInput + ").");
                 return false;
-            else duplicate.add(inputFile);
+            } else if (!fileInput.isFile()) {
+                // Le fichier est un dossier
+                System.out.println("Attention, un des fichiers d'entrées est un dossier (" + fileInput + ").");
+                return false;
+            } else if (inputFile.equals(outputFile)) {
+                // Le fichier à le même nom que le fichier de sortie
+                System.out.println("Attention, un des fichiers d'entrées correspon au fichier de sortie (" + fileInput + ").");
+                return false;
+            } else if (duplicate.contains(inputFile)) {
+                // Le fichier est un doublon
+                System.out.println("Attention, un des fichiers d'entrées est un doublon (" + fileInput + ").");
+                return false;
+            } else if (inputFile.equals(RESERVED_NAME)) {
+                // Le fichier est un doublon
+                System.out.println("Attention, un des fichiers d'entrées utilise un nom réservé (" + fileInput + ").");
+                return false;
+            } else duplicate.add(inputFile);
         }
         // Les fichiers sont corrects
         return true;
@@ -38,7 +58,9 @@ public class FileManager {
                 // Initialise le flux d'entrée correspondant aux octets de notre fichier chiffré ou déchiffré
                 inputStream = new ByteArrayInputStream(filesData.get(i));
             } else {
-                zipOutputStream.putNextEntry(new ZipEntry(new File("EncryptData").getName()));
+                // Ajoute le fichier (contenant les IV et MAC) au flux de sortie (l'archive)
+                zipOutputStream.putNextEntry(new ZipEntry(new File(RESERVED_NAME).getName()));
+                // Initialise le flux d'entrée correspondant aux octets des IV et MAC
                 inputStream = new ByteArrayInputStream(encryptData);
             }
             // Crée un buffer pour lire les octets du flux d'entrée

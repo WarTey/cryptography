@@ -26,16 +26,19 @@ public class Main {
             // Récupère les données du fichier
             byte[] fileData = Files.readAllBytes(fileInput.toPath());
             // Selon le mode choisi dans les arguments, lance le chiffrement ou déchiffrement
-            // Sauvegarde de plus le résultat dans le tableau précédemment créé
             if (encryptionType.equals("encryption")) {
+                // Récupère les données du fichier chiffrées ainsi que son IV et MAC
                 ArrayList<byte[]> encryptResult = Cryptography.encrypt(fileData, Cryptography.hexStringToByteArray(key), i);
+                // Sauvegarde les données chiffrées dans le tableau 'filesData'
                 filesData.add(encryptResult.get(0));
+                // Sauvegarde l'IV et MAC dans le tableau 'encryptData'
                 System.arraycopy(encryptResult.get(1), 0, encryptData, i * BLOCK_SIZE * 2, encryptResult.get(1).length);
             } else if (encryptionType.equals("decryption"))
                 filesData.add(Cryptography.decrypt(fileData, Cryptography.hexStringToByteArray(key)));
         }
-        // Crée l'archive avec les données précédentes
-        FileManager.createArchive(inputFiles, filesData, fileOutput, encryptData);
+        if (encryptionType.equals("encryption"))
+            // Crée l'archive avec les données précédentes
+            FileManager.createArchive(inputFiles, filesData, fileOutput, encryptData);
         System.out.println("Fin d'exécution.");
     }
 
@@ -75,9 +78,7 @@ public class Main {
                     } else
                         System.out.println("Attention, le fichier de sortie est un dossier.");
                 }
-            } else
-                // Affiche un message d'erreur
-                System.out.println("Attention, un des fichiers d'entrées n'existe pas, est un dossier ou correspond au fichier de sortie ou à un des fichiers d'entrées.");
+            }
         } else
             // Affiche un message d'aide si les arguments sont incorrects
             System.out.println(Arguments.helpArguments());
