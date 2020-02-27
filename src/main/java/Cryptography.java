@@ -135,7 +135,7 @@ public class Cryptography {
     }
 
 	// Processus de chiffrement
-	public static ArrayList<byte[]> encrypt(byte[] fileData, byte[] key, int index) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+	public static ArrayList<byte[]> encrypt(byte[] fileData, byte[] key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         // Initialise le tableau vide du vecteur d'initialisation
         byte[] IV = new byte[BLOCK_SIZE];
         // Remplie le tableau avec des valeurs aléatoires

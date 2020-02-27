@@ -17,28 +17,33 @@ public class Main {
     private static void process(ArrayList<String> inputFiles, File fileOutput, String encryptionType, String key) throws IOException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, FileIntegrityException {
         // Initialise le tableau contenant l'ensemble des données chiffrées ou déchiffrées
         ArrayList<byte[]> filesData = new ArrayList<>();
-        // Initialise un tableau d'octets qui contiendra les données nécessaires au déchiffrement
-        byte[] encryptData = new byte[BLOCK_SIZE * 2 * inputFiles.size()];
-        // Parcourt les fichiers d'entrées
-        for (int i = 0; i < inputFiles.size(); i++) {
-            // Initialise le fichier d'entrée
-            File fileInput = new File(inputFiles.get(i));
-            // Récupère les données du fichier
-            byte[] fileData = Files.readAllBytes(fileInput.toPath());
-            // Selon le mode choisi dans les arguments, lance le chiffrement ou déchiffrement
-            if (encryptionType.equals("encryption")) {
+
+        if (encryptionType.equals("encryption")) {
+            // Initialise un tableau d'octets qui contiendra les données nécessaires au déchiffrement
+            byte[] encryptData = new byte[BLOCK_SIZE * 2 * inputFiles.size()];
+            // Parcourt les fichiers d'entrées
+            for (int i = 0; i < inputFiles.size(); i++) {
+                // Initialise le fichier d'entrée
+                File fileInput = new File(inputFiles.get(i));
+                // Récupère les données du fichier
+                byte[] fileData = Files.readAllBytes(fileInput.toPath());
                 // Récupère les données du fichier chiffrées ainsi que son IV et MAC
-                ArrayList<byte[]> encryptResult = Cryptography.encrypt(fileData, Cryptography.hexStringToByteArray(key), i);
+                ArrayList<byte[]> encryptResult = Cryptography.encrypt(fileData, Cryptography.hexStringToByteArray(key));
                 // Sauvegarde les données chiffrées dans le tableau 'filesData'
                 filesData.add(encryptResult.get(0));
                 // Sauvegarde l'IV et MAC dans le tableau 'encryptData'
                 System.arraycopy(encryptResult.get(1), 0, encryptData, i * BLOCK_SIZE * 2, encryptResult.get(1).length);
-            } else if (encryptionType.equals("decryption"))
-                filesData.add(Cryptography.decrypt(fileData, Cryptography.hexStringToByteArray(key)));
-        }
-        if (encryptionType.equals("encryption"))
+            }
             // Crée l'archive avec les données précédentes
             FileManager.createArchive(inputFiles, filesData, fileOutput, encryptData);
+        } else if (encryptionType.equals("decryption")) {
+            ArrayList<File> files = FileManager.extractArchive(new File(inputFiles.get(0)));
+            for (int i = 0; i < files.size(); i++) {
+                byte[] fileData = Files.readAllBytes(files.get(i).toPath());
+                //filesData.add(Cryptography.decrypt(fileData, Cryptography.hexStringToByteArray(key)));
+                //FileManager.createArchive(inputFiles, filesData, fileOutput, null);
+            }
+        }
         System.out.println("Fin d'exécution.");
     }
 
@@ -55,7 +60,7 @@ public class Main {
             File fileOutput = new File(outputFile + ".zip");
 
             // Vérifie que les fichiers d'entrées soient corrects
-            if (FileManager.isInputFilesReady(inputFiles, outputFile)) {
+            if (FileManager.isInputFilesReady(inputFiles, encryptionType)) {
                 // Vérifie que le fichier de sortie n'existe pas
                 if (!fileOutput.exists())
                     // Lance de processus de chiffrement/déchiffrement
