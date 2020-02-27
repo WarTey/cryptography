@@ -80,7 +80,9 @@ public class Arguments {
         errorMessage += space + "-dec: decryption\n";
         errorMessage += space + "-key: secret key (48 characters)\n";
         errorMessage += space + "-in: input files\n";
-        errorMessage += space + "-out: output file (different from the input file)\n";
+        errorMessage += space + "-out: output file (different from the input file)\n\n";
+        // Plus d'informations
+        errorMessage += "With encryption mode, you can send multiples files but with decryption mode, ony the ciphered archive is necessary.\n";
         // Renvoie le message d'aide
         return errorMessage;
     }
