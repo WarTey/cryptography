@@ -19,25 +19,21 @@ public class FileManager {
             // Vérifie que le fichier existe, ne soit pas un dossier, ne soit pas un doublon et qu'il soit différent du fichier de sortie
             if (!fileInput.exists()) {
                 // Le fichier n'existe pas
-                System.out.println("Attention, un des fichiers d'entrées n'existe pas (" + fileInput + ").");
+                System.out.println("Attention, un des fichiers d'entrées n'existe pas (" + fileInput.getName() + ").");
                 return false;
             } else if (!fileInput.isFile()) {
                 // Le fichier est un dossier
-                System.out.println("Attention, un des fichiers d'entrées est un dossier (" + fileInput + ").");
+                System.out.println("Attention, un des fichiers d'entrées est un dossier (" + fileInput.getName() + ").");
                 return false;
-            } else if (inputFile.equals(outputFile)) {
-                // Le fichier à le même nom que le fichier de sortie
-                System.out.println("Attention, un des fichiers d'entrées correspon au fichier de sortie (" + fileInput + ").");
-                return false;
-            } else if (duplicate.contains(inputFile)) {
+            } else if (duplicate.contains(fileInput.getName())) {
                 // Le fichier est un doublon
-                System.out.println("Attention, un des fichiers d'entrées est un doublon (" + fileInput + ").");
+                System.out.println("Attention, un des fichiers d'entrées est un doublon (" + fileInput.getName() + ").");
                 return false;
-            } else if (inputFile.equals(RESERVED_NAME)) {
-                // Le fichier est un doublon
-                System.out.println("Attention, un des fichiers d'entrées utilise un nom réservé (" + fileInput + ").");
+            } else if (fileInput.getName().equals(RESERVED_NAME)) {
+                // Le fichier utilise un nom réservé
+                System.out.println("Attention, un des fichiers d'entrées utilise un nom réservé (" + fileInput.getName() + ").");
                 return false;
-            } else duplicate.add(inputFile);
+            } else duplicate.add(fileInput.getName());
         }
         // Les fichiers sont corrects
         return true;
