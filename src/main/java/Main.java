@@ -1,11 +1,8 @@
-import at.favre.lib.crypto.HKDF;
-
 import javax.crypto.BadPaddingException;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
@@ -14,27 +11,31 @@ import java.util.Scanner;
 
 public class Main {
 
-    // Taille clé dérivée en octet
-    private static final int KEY_SIZE = 24;
+    // Taille d'un bloc en octet
+    private static final int BLOCK_SIZE = 16;
 
     private static void process(ArrayList<String> inputFiles, File fileOutput, String encryptionType, String key) throws IOException, IllegalBlockSizeException, InvalidKeyException, BadPaddingException, NoSuchAlgorithmException, NoSuchPaddingException, FileIntegrityException {
         // Initialise le tableau contenant l'ensemble des données chiffrées ou déchiffrées
         ArrayList<byte[]> filesData = new ArrayList<>();
+        // Initialise un tableau d'octets qui contiendra les données nécessaires au déchiffrement
+        byte[] encryptData = new byte[BLOCK_SIZE * 2 * inputFiles.size()];
         // Parcourt les fichiers d'entrées
-        for (String inputFile : inputFiles) {
+        for (int i = 0; i < inputFiles.size(); i++) {
             // Initialise le fichier d'entrée
-            File fileInput = new File(inputFile);
+            File fileInput = new File(inputFiles.get(i));
             // Récupère les données du fichier
             byte[] fileData = Files.readAllBytes(fileInput.toPath());
             // Selon le mode choisi dans les arguments, lance le chiffrement ou déchiffrement
             // Sauvegarde de plus le résultat dans le tableau précédemment créé
-            if (encryptionType.equals("encryption"))
-                filesData.add(Cryptography.encrypt(fileData, Cryptography.hexStringToByteArray(key)));
-            else if (encryptionType.equals("decryption"))
+            if (encryptionType.equals("encryption")) {
+                ArrayList<byte[]> encryptResult = Cryptography.encrypt(fileData, Cryptography.hexStringToByteArray(key), i);
+                filesData.add(encryptResult.get(0));
+                System.arraycopy(encryptResult.get(1), 0, encryptData, i * BLOCK_SIZE * 2, encryptResult.get(1).length);
+            } else if (encryptionType.equals("decryption"))
                 filesData.add(Cryptography.decrypt(fileData, Cryptography.hexStringToByteArray(key)));
         }
         // Crée l'archive avec les données précédentes
-        FileManager.createArchive(inputFiles, filesData, fileOutput);
+        FileManager.createArchive(inputFiles, filesData, fileOutput, encryptData);
         System.out.println("Fin d'exécution.");
     }
 

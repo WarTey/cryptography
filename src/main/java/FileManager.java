@@ -24,17 +24,23 @@ public class FileManager {
     }
 
     // Crée une archive à partir des nouvelles données
-    public static void createArchive(ArrayList<String> inputFiles, ArrayList<byte[]> filesData, File fileOutput) throws IOException {
+    public static void createArchive(ArrayList<String> inputFiles, ArrayList<byte[]> filesData, File fileOutput, byte[] encryptData) throws IOException {
         // Initialise le flux de sortie permettant d'écrire dans le fichier
         FileOutputStream fileOutputStream = new FileOutputStream(fileOutput.getName());
         // Initialise le flux de sortie permettant d'ajouter des données à l'archive
         ZipOutputStream zipOutputStream = new ZipOutputStream(fileOutputStream);
         // Parcourt l'ensemble des fichiers d'entrées
-        for (int i = 0; i < inputFiles.size(); i++) {
-            // Ajoute le fichier au flux de sortie (l'archive)
-            zipOutputStream.putNextEntry(new ZipEntry(new File(inputFiles.get(i)).getName()));
-            // Initialise le flux d'entrée correspondant aux octets de notre fichier chiffré ou déchiffré
-            InputStream inputStream = new ByteArrayInputStream(filesData.get(i));
+        for (int i = 0; i < inputFiles.size() + 1; i++) {
+            InputStream inputStream;
+            if (i < inputFiles.size()) {
+                // Ajoute le fichier au flux de sortie (l'archive)
+                zipOutputStream.putNextEntry(new ZipEntry(new File(inputFiles.get(i)).getName()));
+                // Initialise le flux d'entrée correspondant aux octets de notre fichier chiffré ou déchiffré
+                inputStream = new ByteArrayInputStream(filesData.get(i));
+            } else {
+                zipOutputStream.putNextEntry(new ZipEntry(new File("EncryptData").getName()));
+                inputStream = new ByteArrayInputStream(encryptData);
+            }
             // Crée un buffer pour lire les octets du flux d'entrée
             byte[] bytes = new byte[1024];
             int length;

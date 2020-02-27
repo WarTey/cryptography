@@ -135,7 +135,7 @@ public class Cryptography {
     }
 
 	// Processus de chiffrement
-	public static byte[] encrypt(byte[] fileData, byte[] key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+	public static ArrayList<byte[]> encrypt(byte[] fileData, byte[] key, int index) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
         // Initialise le tableau vide du vecteur d'initialisation
         byte[] IV = new byte[BLOCK_SIZE];
         // Remplie le tableau avec des valeurs aléatoires
@@ -177,27 +177,19 @@ public class Cryptography {
             System.arraycopy(ctsBlock, 0, fileData, fileData.length - ctsBlock.length, ctsBlock.length);
         }
 
-		/*// Initialisation d'un nouveau tableau pour les données chiffrées plus l'IV
-		byte[] newFileDataIV = new byte[newFileData.length + BLOCK_SIZE];
-		// On copie les données du fichier chiffrées dans ce nouveau tableau
-		System.arraycopy(newFileData, 0, newFileDataIV, 0, newFileData.length);
-		// On ajoute l'IV à la fin
-		System.arraycopy(IV, 0, newFileDataIV, newFileData.length, IV.length);
-		
-		// Préparation du CMAC avec les données suivantes : ciphertext || iv
-		mac.update(newFileDataIV, 0, newFileDataIV.length);
-		// Initialisation du tableau qui récupérera le CMAC
-		byte[] macResult = new byte[mac.getMacSize()];
-		// Calcul du CMAC et nous donne le résultat dans le tableau macResult
-		mac.doFinal(macResult, 0);
+        // Préparation du CMAC avec les données suivantes : ciphertext || iv
+        mac.update(fileData, 0, fileData.length);
+        // Initialisation du tableau qui récupérera le CMAC
+        byte[] macResult = new byte[mac.getMacSize()];
+        // Calcul du CMAC et nous donne le résultat dans le tableau macResult
+        mac.doFinal(macResult, 0);
 
-		// Initialisation d'un nouveau tableau qui contiendra les données chiffrées, l'IV et le CMAC
-		byte[] newFileDataIVMac = new byte[newFileDataIV.length + MAC_SIZE];
-		
-		// Copie du ciphertext et IV dans ce nouveau tableau
-		System.arraycopy(newFileDataIV, 0, newFileDataIVMac, 0, newFileDataIV.length);
-		// Copie du CMAC à la fin du tableau
-		System.arraycopy(macResult, 0, newFileDataIVMac, newFileDataIV.length, macResult.length);*/
+        // Tableau d'octets contenant l'IV et le MAC du fichier
+        byte[] encryptData = new byte[BLOCK_SIZE * 2];
+		// On sauvegarde l'IV du fichier
+		System.arraycopy(IV, 0, encryptData, 0, IV.length);
+		// On sauvegarde le CMAC du fichier
+		System.arraycopy(macResult, 0, encryptData, IV.length, macResult.length);
 		
 		// On efface les données des clés en mémoire
 		Arrays.fill(keys.get(0), (byte) 0);
@@ -205,8 +197,7 @@ public class Cryptography {
 		Arrays.fill(keys.get(2), (byte) 0);
 
 		// Renvoie les nouvelles données du fichier chiffré
-		//return newFileDataIVMac;
-        return fileData;
+        return new ArrayList<>(Arrays.asList(fileData, encryptData));
 	}
 
     // Processus de déchiffrement
