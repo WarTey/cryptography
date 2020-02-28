@@ -30,11 +30,10 @@ public class FileManager {
         return fileSignature == 0x504B0304 || fileSignature == 0x504B0506 || fileSignature == 0x504B0708;
     }
 
-    // Vérifie l'ensemble des fichiers d'entrées et le fichier de sortie
+    // Vérifie l'ensemble des fichiers d'entrées
     public static Boolean isInputFilesReady(ArrayList<String> inputFiles, String encryptionType) {
         // Pour le déchiffrement, vérifie que le fichier d'entrée est une archive
         if (encryptionType.equals("decryption") && !isArchive(new File(inputFiles.get(0)))) {
-            // Affiche un message d'erreur et quitte le programme
             System.out.println("Attention, lors d'un déchiffrement, le paramètre d'entrée doit être une archive au format zip.");
             return false;
         }
@@ -47,22 +46,18 @@ public class FileManager {
             File fileInput = new File(inputFile);
             // Vérifie que le fichier existe
             if (!fileInput.exists()) {
-                // Le fichier n'existe pas
                 System.out.println("Attention, un des fichiers d'entrées n'existe pas (" + fileInput.getName() + ").");
                 return false;
             // Vérifie que le fichier ne soit pas un dossier
             } else if (!fileInput.isFile()) {
-                // Le fichier est un dossier
                 System.out.println("Attention, un des fichiers d'entrées est un dossier (" + fileInput.getName() + ").");
                 return false;
             // Vérifie que le fichier ne soit pas un doublon
             } else if (duplicate.contains(fileInput.getName())) {
-                // Le fichier est un doublon
                 System.out.println("Attention, un des fichiers d'entrées est un doublon (" + fileInput.getName() + ").");
                 return false;
             // Vérifie que le fichier ne possède pas un nom réservé
             } else if (fileInput.getName().equals(RESERVED_NAME)) {
-                // Le fichier utilise un nom réservé
                 System.out.println("Attention, un des fichiers d'entrées utilise un nom réservé (" + fileInput.getName() + ").");
                 return false;
             // Rajoute le fichier au tableau 'des doublons'
@@ -71,10 +66,10 @@ public class FileManager {
         return true;
     }
 
+    // Vérifie le fichier de sortie
     public static Boolean isOutputFilesReady(File fileOutput, String encryptionType) {
         // Pour le déchiffrement, vérifie que le dossier de sortie ne soit pas déjà présent
         if (encryptionType.equals("decryption") && fileOutput.isDirectory()) {
-            // Affiche un message d'erreur et quitte le programme
             System.out.println("Attention, un dossier utilisant le nom " + fileOutput.getName() + " est déjà existant.");
             return false;
         } else if (encryptionType.equals("encryption")) {
@@ -82,34 +77,28 @@ public class FileManager {
             String[] splittedOutput = fileOutput.getName().split(Pattern.quote("."));
             // Vérifie que la dernière partie du nom soit 'zip'
             if (!splittedOutput[splittedOutput.length - 1].equals("zip")) {
-                // Affiche un message d'erreur et quitte le programme
                 System.out.println("Attention, lors d'un chiffrement, le paramètre de sortie doit être une archive au format zip.");
                 return false;
             }
         }
 
-        // Dans le cas où le fichier de sortie existe
-        if (fileOutput.exists()) {
-            // Vérifie si le fichier de sortie est un fichier
-            if (fileOutput.isFile()) {
-                String answer;
-                do {
-                    // Demande à l'utilisateur s'il est possible d'écraser le fichier de sortie
-                    System.out.println("Attention, le fichier de sortie existe déjà. Voulez-vous l'écraser? (Y/N)");
-                    // Récupère l'entrée de l'utilisateur
-                    answer = new Scanner(System.in).next();
-                } while (!answer.equals("Y") && !answer.equals("N"));
-                // Selon sa réponse lance le processus ou arrête de programme
-                if (!answer.equals("Y") || (!fileOutput.delete())) {
-                    // Affiche un message d'erreur et quitte le programme
-                    System.out.println("Processus interrompu.");
-                    return false;
-                }
-            } else {
-                // Affiche un message d'erreur et quitte le programme
-                System.out.println("Attention, le fichier de sortie est un dossier.");
+        // Dans le cas où le fichier de sortie existe et qu'il s'agit bien d'un fichier
+        if (fileOutput.exists() && fileOutput.isFile()) {
+            String answer;
+            do {
+                // Demande à l'utilisateur s'il est possible d'écraser le fichier de sortie
+                System.out.println("Attention, le fichier de sortie existe déjà. Voulez-vous l'écraser? (Y/N)");
+                // Récupère l'entrée de l'utilisateur
+                answer = new Scanner(System.in).next();
+            } while (!answer.equals("Y") && !answer.equals("N"));
+            // Selon sa réponse, arrête de programme
+            if (!answer.equals("Y") || (!fileOutput.delete())) {
+                System.out.println("Processus interrompu.");
                 return false;
             }
+        } else {
+            System.out.println("Attention, le fichier de sortie est un dossier.");
+            return false;
         }
         return true;
     }
@@ -153,7 +142,7 @@ public class FileManager {
 
     // Extrait l'archive contenant les fichiers chiffrés
     public static void extractArchive(String zipName, String outputFile) throws IOException {
-        // Initialise le flux d'entrée permettant de récupérer des données de l'archive
+        // Initialise le flux d'entrée permettant de récupérer les données de l'archive
         ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(zipName));
         // Représente les entrées d'une archive
         ZipEntry zipEntry = zipInputStream.getNextEntry();
@@ -163,7 +152,7 @@ public class FileManager {
             String filePath = outputFile + File.separator + zipEntry.getName();
             // Vérifie que l'entrée soit différente d'un dossier
             if (!zipEntry.isDirectory()) {
-                // Crée un nouveau flux de sortie pour écrire des données dans le flux de sortie spécifié
+                // Crée un nouveau flux de sortie pour écrire les données dans le flux de sortie spécifié
                 BufferedOutputStream bufferedOutputStream = new BufferedOutputStream(new FileOutputStream(filePath));
                 // Crée un buffer pour lire les octets de l'archive
                 byte[] bytes = new byte[1024];
@@ -187,7 +176,7 @@ public class FileManager {
     public static ArrayList<String> extractNamesFromArchive(File inputFile) throws IOException {
         // Permet de lire les entrées d'une archive
         ZipFile zipFile = new ZipFile(inputFile.getPath());
-        // Génère une série d'éléments correspondants aux entrées de l'archive
+        // Génère une série d'éléments correspondant aux entrées de l'archive
         Enumeration<? extends ZipEntry> entries = zipFile.entries();
         // Initialise un tableau contenant les noms des fichiers
         ArrayList<String> names = new ArrayList<>();
@@ -195,7 +184,7 @@ public class FileManager {
         while (entries.hasMoreElements()) {
             // Récupère l'entrée suivante
             ZipEntry zipEntry = entries.nextElement();
-            // Ajout le nom au tableau
+            // Ajoute le nom au tableau
             names.add(zipEntry.getName());
         }
         // Termine la lecture de l'archive
