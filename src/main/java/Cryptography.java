@@ -73,49 +73,38 @@ public class Cryptography {
         return fileData;
     }
 
+    // Effectue les opérations pour 'CTS'
     private static byte[] computeCTS(byte[] fileData, Cipher cipher, byte[] blockToXor, Boolean isEncrypt) throws BadPaddingException, IllegalBlockSizeException {
-        // Détermine la taille de l'avant dernier bloc
-        int sizePreviousBlock = Math.min(fileData.length, BLOCK_SIZE);
-        // Détermine la taille du dernier bloc
-        int sizeLastBlock = fileData.length < BLOCK_SIZE ? fileData.length : fileData.length % BLOCK_SIZE;
-
-        // Initialise l'avant dernier bloc
-        byte[] bLastBlock = new byte[sizePreviousBlock];
+        // Initialise l'avant-dernier bloc
+        byte[] bLastBlock = new byte[BLOCK_SIZE];
         // Initialise le dernier bloc
-        byte[] lastBlock = new byte[sizeLastBlock];
-        // Dans le cas où la taille du fichier est plsu faible que la taille d'un bloc
-        if (fileData.length < BLOCK_SIZE) {
-            // Initialise l'avant dernier bloc et le dernier bloc avec les données du fichier
-            System.arraycopy(fileData, 0, bLastBlock, 0, bLastBlock.length);
-            System.arraycopy(fileData, 0, lastBlock, 0, lastBlock.length);
-        } else {
-            // Initialise l'avant dernier bloc avec celui des données du fichier
-            System.arraycopy(fileData, fileData.length - lastBlock.length - BLOCK_SIZE, bLastBlock, 0, bLastBlock.length);
-            // Initialise le dernier bloc avec celui des données du fichier
-            System.arraycopy(fileData, fileData.length - lastBlock.length, lastBlock, 0, lastBlock.length);
-        }
+        byte[] lastBlock = new byte[fileData.length % BLOCK_SIZE];
+        // Initialise l'avant-dernier bloc avec celui des données du fichier
+        System.arraycopy(fileData, fileData.length - lastBlock.length - BLOCK_SIZE, bLastBlock, 0, bLastBlock.length);
+        // Initialise le dernier bloc avec celui des données du fichier
+        System.arraycopy(fileData, fileData.length - lastBlock.length, lastBlock, 0, lastBlock.length);
 
-        // Initialise le nouveau avant dernier bloc
+        // Initialise le nouveau avant-dernier bloc
         byte[] newBLastBlock = new byte[lastBlock.length];
         // Initialise le nouveau dernier bloc
         byte[] newLastBlock = new byte[bLastBlock.length];
         if (isEncrypt) {
-            // Effectue un XOR puis chiffrement sur l'avant dernier bloc et le copie dans le nouveau dernier bloc
+            // Effectue un XOR puis chiffrement sur l'avant-dernier bloc et le copie dans le nouveau dernier bloc
             System.arraycopy(cipher.doFinal(xor(bLastBlock, blockToXor)), 0, newLastBlock, 0, newLastBlock.length);
-            // Copie le nouveau dernier bloc dans le nouveau avant dernier bloc
+            // Copie le nouveau dernier bloc dans le nouveau avant-dernier bloc
             System.arraycopy(newLastBlock, 0, newBLastBlock, 0, newBLastBlock.length);
-            // Effectue en XOR entre le dernier bloc et le nouveau avant dernier bloc et copie le résultat dans le nouveau dernier bloc
+            // Effectue en XOR entre le dernier bloc et le nouveau avant-dernier bloc et copie le résultat dans le nouveau dernier bloc
             System.arraycopy(xor(lastBlock, newBLastBlock), 0, newLastBlock, 0, lastBlock.length);
             // Effectue un chiffrement sur le nouveau dernier bloc et le copie dans le nouveau dernier bloc
             System.arraycopy(cipher.doFinal(newLastBlock), 0, newLastBlock, 0, newLastBlock.length);
         } else {
-            // Effectue un déchiffrement sur l'avant dernier bloc et le copie dans lui-même
+            // Effectue un déchiffrement sur l'avant-dernier bloc et le copie dans lui-même
             System.arraycopy(cipher.doFinal(bLastBlock), 0, bLastBlock, 0, bLastBlock.length);
-            // Copie l'avant dernier bloc dans le nouveau dernier bloc
+            // Copie l'avant-dernier bloc dans le nouveau dernier bloc
             System.arraycopy(bLastBlock, 0, newLastBlock, 0, newLastBlock.length);
             // Copie le dernier bloc dans le nouveau dernier bloc
             System.arraycopy(lastBlock, 0, newLastBlock, 0, lastBlock.length);
-            // Effectue un XOR entre l'avant dernier bloc et le nouveau dernier bloc et copie le résultat dans le nouveau dernier bloc
+            // Effectue un XOR entre l'avant-dernier bloc et le nouveau dernier bloc et copie le résultat dans le nouveau dernier bloc
             System.arraycopy(xor(bLastBlock, newLastBlock), 0, newBLastBlock, 0, newBLastBlock.length);
             // Effectue un XOR puis déchiffrement sur le nouveau dernier bloc et copie le résultat dans lui-même
             System.arraycopy(xor(cipher.doFinal(newLastBlock), blockToXor), 0, newLastBlock, 0, newLastBlock.length);
@@ -123,7 +112,7 @@ public class Cryptography {
 
         // Initialise le tableau contenant nos données 'CTS'
         byte[] ctsBlock = new byte[bLastBlock.length + lastBlock.length];
-        // Copie le nouveau avant dernier bloc dans le tableau précédent
+        // Copie le nouveau avant-dernier bloc dans le tableau précédent
         System.arraycopy(newLastBlock, 0, ctsBlock, 0, newLastBlock.length);
         // Copie le nouveau dernier bloc dans le tableau précédent
         System.arraycopy(newBLastBlock, 0, ctsBlock, newLastBlock.length, newBLastBlock.length);
@@ -133,7 +122,7 @@ public class Cryptography {
 
 	// Processus de chiffrement
 	public static ArrayList<byte[]> encrypt(byte[] fileData, byte[] key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        // Initialise le tableau vide du vecteur d'initialisation
+        // Initialise le tableau du vecteur d'initialisation
         byte[] IV = new byte[BLOCK_SIZE];
         // Remplie le tableau avec des valeurs aléatoires
         new SecureRandom().nextBytes(IV);
@@ -172,7 +161,7 @@ public class Cryptography {
 
         // Création de l'instance du MAC
         Mac mac = initMac(keys.get(1));
-        // Préparation du CMAC avec les données suivantes : ciphertext || iv
+        // Préparation du CMAC avec les données chiffrées
         mac.update(fileData, 0, fileData.length);
         // Initialisation du tableau qui récupérera le CMAC
         byte[] macResult = new byte[mac.getMacSize()];
@@ -216,7 +205,7 @@ public class Cryptography {
 
         // Création de l'instance du MAC
         Mac mac = initMac(keys.get(1));
-		// Préparation du CMAC avec les données suivantes : ciphertext || iv
+		// Préparation du CMAC avec les données chiffrées
 		mac.update(fileData, 0, fileData.length);
 		// Initialisation du tableau qui récupérera le CMAC
 		byte[] macResult = new byte[mac.getMacSize()];
