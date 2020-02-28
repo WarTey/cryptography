@@ -23,14 +23,11 @@ import at.favre.lib.crypto.HKDF;
 public class Cryptography {
 
 	// Taille clé de chiffrement en octet
-	private static final int ENCRYPT_KEY_SIZE = 24;
-	
+	public static final int ENCRYPT_KEY_SIZE = 24;
 	// Taille clé d'intégrité en octet
 	private static final int MAC_KEY_SIZE = 16;
-
     // Taille d'un bloc en octet
-    private static final int BLOCK_SIZE = 16;
-
+    public static final int BLOCK_SIZE = 16;
     // Taille d'un mac en octet
     private static final int MAC_SIZE = 16;
 
@@ -47,7 +44,7 @@ public class Cryptography {
         // La clé d'intégrité utilisée pour calculer le CMAC : MAC_KEY_SIZE octets
         byte[] integrityKey = HKDF.fromHmacSha256().expand(masterKey, "integrityKey".getBytes(StandardCharsets.UTF_8), MAC_KEY_SIZE);
         // Renvoie nos clés
-        return new ArrayList<>(Arrays.asList(masterKey, encKey, integrityKey));
+        return new ArrayList<>(Arrays.asList(encKey, integrityKey));
     }
 
     // Initialise notre MAC pour le chiffrement et déchiffrement
@@ -64,26 +61,6 @@ public class Cryptography {
         return mac;
     }
 
-    // Renvoie le MAC stocké dans les données du fichier
-    private static byte[] getMAC(byte[] fileData) {
-        // Initialisation du MAC avec la taille correspondante
-        byte[] MAC = new byte[MAC_SIZE];
-        // Récupération de ce dernier dans les données du fichier (situé à la fin de fileData)
-        System.arraycopy(fileData, fileData.length - MAC.length, MAC, 0, MAC.length);
-        // Renvoie le MAC
-        return MAC;
-    }
-    
-    // Renvoie le vecteur d'initialisation stocké dans les données du fichier
-    private static byte[] getIV(byte[] fileData) {
-        // Initialisation du vecteur d'initialisation avec la taille correspondante
-        byte[] IV = new byte[BLOCK_SIZE];
-        // Récupération de ce dernier dans les données du fichier (situé avant le MAC dans filedata)
-        System.arraycopy(fileData, fileData.length - IV.length - MAC_SIZE, IV, 0, IV.length);
-        // Renvoie l'IV
-        return IV;
-    }
-
     // Renvoie le résultat de l'opération XOR entre deux tableaux d'octets
     private static byte[] xor(byte[] fileData, byte[] previous) {
         // On vérifie si les tableaux ont la même taille
@@ -96,176 +73,184 @@ public class Cryptography {
         return fileData;
     }
 
-    // Supprime le padding des données du fichier
-    private static byte[] removePadding(byte[] fileData) {
-        // Détermine la taille du padding (qui est aussi la valeur des valeurs stockées)
-        int paddingValue = fileData[fileData.length - 1];
-        // On vérifie que les valeurs précédentes soient bien égales à la taille du padding
-        // On remonte de n fois où n correspond à la valeur du padding
-        for (int i = fileData.length - paddingValue; i < fileData.length; i++)
-            // On renvoie le tableau sans modification si une valeur est différente
-            if (fileData[i] != paddingValue)
-                return fileData;
+    // Effectue les opérations pour 'CTS'
+    private static byte[] computeCTS(byte[] fileData, Cipher cipher, byte[] blockToXor, Boolean isEncrypt) throws BadPaddingException, IllegalBlockSizeException {
+        // Initialise l'avant-dernier bloc
+        byte[] bLastBlock = new byte[BLOCK_SIZE];
+        // Initialise le dernier bloc
+        byte[] lastBlock = new byte[fileData.length % BLOCK_SIZE];
+        // Initialise l'avant-dernier bloc avec celui des données du fichier
+        System.arraycopy(fileData, fileData.length - lastBlock.length - BLOCK_SIZE, bLastBlock, 0, bLastBlock.length);
+        // Initialise le dernier bloc avec celui des données du fichier
+        System.arraycopy(fileData, fileData.length - lastBlock.length, lastBlock, 0, lastBlock.length);
 
-        // Initialisation d'un nouveau tableau avec la taille du précédent moins la valeur du padding
-        byte[] newFileData = new byte[fileData.length - paddingValue];
-        // Copie des données du fichier sans le padding
-        System.arraycopy(fileData, 0, newFileData, 0, newFileData.length);
+        // Initialise le nouveau avant-dernier bloc
+        byte[] newBLastBlock = new byte[lastBlock.length];
+        // Initialise le nouveau dernier bloc
+        byte[] newLastBlock = new byte[bLastBlock.length];
+        if (isEncrypt) {
+            // Effectue un XOR puis chiffrement sur l'avant-dernier bloc et le copie dans le nouveau dernier bloc
+            System.arraycopy(cipher.doFinal(xor(bLastBlock, blockToXor)), 0, newLastBlock, 0, newLastBlock.length);
+            // Copie le nouveau dernier bloc dans le nouveau avant-dernier bloc
+            System.arraycopy(newLastBlock, 0, newBLastBlock, 0, newBLastBlock.length);
+            // Effectue en XOR entre le dernier bloc et le nouveau avant-dernier bloc et copie le résultat dans le nouveau dernier bloc
+            System.arraycopy(xor(lastBlock, newBLastBlock), 0, newLastBlock, 0, lastBlock.length);
+            // Effectue un chiffrement sur le nouveau dernier bloc et le copie dans le nouveau dernier bloc
+            System.arraycopy(cipher.doFinal(newLastBlock), 0, newLastBlock, 0, newLastBlock.length);
+        } else {
+            // Effectue un déchiffrement sur l'avant-dernier bloc et le copie dans lui-même
+            System.arraycopy(cipher.doFinal(bLastBlock), 0, bLastBlock, 0, bLastBlock.length);
+            // Copie l'avant-dernier bloc dans le nouveau dernier bloc
+            System.arraycopy(bLastBlock, 0, newLastBlock, 0, newLastBlock.length);
+            // Copie le dernier bloc dans le nouveau dernier bloc
+            System.arraycopy(lastBlock, 0, newLastBlock, 0, lastBlock.length);
+            // Effectue un XOR entre l'avant-dernier bloc et le nouveau dernier bloc et copie le résultat dans le nouveau dernier bloc
+            System.arraycopy(xor(bLastBlock, newLastBlock), 0, newBLastBlock, 0, newBLastBlock.length);
+            // Effectue un XOR puis déchiffrement sur le nouveau dernier bloc et copie le résultat dans lui-même
+            System.arraycopy(xor(cipher.doFinal(newLastBlock), blockToXor), 0, newLastBlock, 0, newLastBlock.length);
+        }
+
+        // Initialise le tableau contenant nos données 'CTS'
+        byte[] ctsBlock = new byte[bLastBlock.length + lastBlock.length];
+        // Copie le nouveau avant-dernier bloc dans le tableau précédent
+        System.arraycopy(newLastBlock, 0, ctsBlock, 0, newLastBlock.length);
+        // Copie le nouveau dernier bloc dans le tableau précédent
+        System.arraycopy(newBLastBlock, 0, ctsBlock, newLastBlock.length, newBLastBlock.length);
         // Renvoie les nouvelles données
-        return newFileData;
+        return ctsBlock;
     }
 
-    // Ajoute un padding aux données du fichier
-    private static byte[] addPadding(byte[] fileData) {
-        // Calcul de la taille du padding
-		int paddingValue = BLOCK_SIZE - (fileData.length % BLOCK_SIZE);
-        // Initialisation d'un nouveau tableau avec la taille des données plus la valeur du padding
-		byte[] newFileData = new byte[fileData.length + paddingValue];
-		// Copie des données du fichier dans ce tableau
-		System.arraycopy(fileData, 0, newFileData, 0, fileData.length);
-		// Ajoute les valeurs du padding à la fin des données
-		for (int i = fileData.length; i < fileData.length + paddingValue; i++)
-			newFileData[i] = (byte) (0xff & paddingValue);
-		// Renvoie les nouvelles données
-		return newFileData;
-	}
-
 	// Processus de chiffrement
-	public static byte[] encrypt(byte[] fileData, byte[] key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
-        // Initialise le tableau vide du vecteur d'initialisation
+	public static ArrayList<byte[]> encrypt(byte[] fileData, byte[] key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException {
+        // Initialise le tableau du vecteur d'initialisation
         byte[] IV = new byte[BLOCK_SIZE];
         // Remplie le tableau avec des valeurs aléatoires
         new SecureRandom().nextBytes(IV);
 
         // Dérive notre clé en deux sous clés
-        // 0 - clé maître, 1 - clé de chiffrement, 2 - clé d'intégrité
+        // 0 - clé de chiffrement, 1 - clé d'intégrité
         ArrayList<byte[]> keys = derivateKey(HKDF.fromHmacSha256().expand(key, Arrays.toString(IV).getBytes(StandardCharsets.UTF_8), ENCRYPT_KEY_SIZE));
-
-        // Création de l'instance du MAC
-        Mac mac = initMac(keys.get(2));
 
 		// Initialisation de l'algorithme de chiffrement
         // Ici ECB mais application des étapes nécessaires pour faire un CBC avec un padding
         Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
         // Choix du type (chiffrement) avec initialisation de la clé
-		cipher.init(Cipher.ENCRYPT_MODE, getSecretKey(keys.get(1)));
+		cipher.init(Cipher.ENCRYPT_MODE, getSecretKey(keys.get(0)));
 
-		// Initialisation d'un tableau avec les données du fichier plus le padding
-		byte[] newFileData = addPadding(fileData);
 		// Initialisation de deux tableaux permettant de conserver les blocs pour les étapes suivantes
 		byte[][] tempData = new byte[2][BLOCK_SIZE];
+        System.arraycopy(IV, 0, tempData[1], 0, tempData[1].length);
+
 		// Itération sur chaque bloc des données du fichier
-		for (int i = 0; i < newFileData.length; i += BLOCK_SIZE) {
+		for (int i = 0; i < fileData.length - (2 * BLOCK_SIZE); i += BLOCK_SIZE) {
 		    // Copie le bloc 'i' du fichier dans le tableau '0'
-			System.arraycopy(newFileData, i, tempData[0], 0, tempData[0].length);
+			System.arraycopy(fileData, i, tempData[0], 0, tempData[0].length);
 			// Met à jour le tableau '0' avec le résultat du XOR suivi du chiffrement AES
             // S'il s'agit de la première itération alors on XOR avec l'IV sinon avec le bloc précédent
 			System.arraycopy(cipher.doFinal(xor(tempData[0], (i == 0) ? IV : tempData[1])), 0, tempData[0], 0, tempData[0].length);
 			// On sauvegarde le résultat dans le tableau '1' pour le tour suivant
 			System.arraycopy(tempData[0], 0, tempData[1], 0, tempData[0].length);
 			// Renvoie le tableau '0' dans le tableau d'origine (contenant les données du fichier)
-			System.arraycopy(tempData[0], 0, newFileData, i, tempData[0].length);
+			System.arraycopy(tempData[0], 0, fileData, i, tempData[0].length);
 		}
 
-		// Initialisation d'un nouveau tableau pour les données chiffrées plus l'IV
-		byte[] newFileDataIV = new byte[newFileData.length + BLOCK_SIZE];
-		// On copie les données du fichier chiffrées dans ce nouveau tableau
-		System.arraycopy(newFileData, 0, newFileDataIV, 0, newFileData.length);
-		// On ajoute l'IV à la fin
-		System.arraycopy(IV, 0, newFileDataIV, newFileData.length, IV.length);
-		
-		// Préparation du CMAC avec les données suivantes : ciphertext || iv
-		mac.update(newFileDataIV, 0, newFileDataIV.length);
-		// Initialisation du tableau qui récupérera le CMAC
-		byte[] macResult = new byte[mac.getMacSize()];
-		// Calcul du CMAC et nous donne le résultat dans le tableau macResult
-		mac.doFinal(macResult, 0);
+		// Effectue les opérations CTS pour garder un fichier intact niveau taille
+		byte[] ctsBlock = computeCTS(fileData, cipher, tempData[1], true);
+        // Remplace les deux dernier blocs du fichier par les blocs précédents
+        System.arraycopy(ctsBlock, 0, fileData, fileData.length - ctsBlock.length, ctsBlock.length);
 
-		// Initialisation d'un nouveau tableau qui contiendra les données chiffrées, l'IV et le CMAC
-		byte[] newFileDataIVMac = new byte[newFileDataIV.length + MAC_SIZE];
-		
-		// Copie du ciphertext et IV dans ce nouveau tableau
-		System.arraycopy(newFileDataIV, 0, newFileDataIVMac, 0, newFileDataIV.length);
-		// Copie du CMAC à la fin du tableau
-		System.arraycopy(macResult, 0, newFileDataIVMac, newFileDataIV.length, macResult.length);
+        // Création de l'instance du MAC
+        Mac mac = initMac(keys.get(1));
+        // Préparation du CMAC avec les données chiffrées
+        mac.update(fileData, 0, fileData.length);
+        // Initialisation du tableau qui récupérera le CMAC
+        byte[] macResult = new byte[mac.getMacSize()];
+        // Calcul du CMAC et nous donne le résultat dans le tableau macResult
+        mac.doFinal(macResult, 0);
+
+        // Tableau d'octets contenant l'IV et le MAC du fichier
+        byte[] encryptData = new byte[BLOCK_SIZE * 2];
+		// On sauvegarde l'IV du fichier
+		System.arraycopy(IV, 0, encryptData, 0, IV.length);
+		// On sauvegarde le CMAC du fichier
+		System.arraycopy(macResult, 0, encryptData, IV.length, macResult.length);
 		
 		// On efface les données des clés en mémoire
+		Arrays.fill(key, (byte) 0);
 		Arrays.fill(keys.get(0), (byte) 0);
 		Arrays.fill(keys.get(1), (byte) 0);
-		Arrays.fill(keys.get(2), (byte) 0);
 
 		// Renvoie les nouvelles données du fichier chiffré
-		return newFileDataIVMac;
+        return new ArrayList<>(Arrays.asList(fileData, encryptData));
 	}
 
     // Processus de déchiffrement
-    public static byte[] decrypt(byte[] fileData, byte[] key) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, FileIntegrityException {
-        // Récupération de l'IV à la fin des données chiffrées
-        byte[] IV = getIV(fileData);
-        // Récupération du CMAC
-        byte[] receivedMAC = getMAC(fileData);
+    public static byte[] decrypt(byte[] fileData, byte[] key, byte[] encryptData) throws NoSuchPaddingException, NoSuchAlgorithmException, InvalidKeyException, BadPaddingException, IllegalBlockSizeException, FileIntegrityException {
+        // Récupération de l'IV à partir du tableau 'encryptData'
+        byte[] IV = new byte[BLOCK_SIZE];
+        System.arraycopy(encryptData, 0, IV, 0, IV.length);
+        // Récupération du CMAC à partir du tableau 'encryptData'
+        byte[] receivedMAC = new byte[BLOCK_SIZE];
+        System.arraycopy(encryptData, IV.length, receivedMAC, 0, receivedMAC.length);
 
         // Dérive notre clé en deux sous clés
-        // 0 - clé maître, 1 - clé de chiffrement, 2 - clé d'intégrité
+        // 0 - clé de chiffrement, 1 - clé d'intégrité
         ArrayList<byte[]> keys = derivateKey(HKDF.fromHmacSha256().expand(key, Arrays.toString(IV).getBytes(StandardCharsets.UTF_8), ENCRYPT_KEY_SIZE));
-
-        // Création de l'instance du MAC
-        Mac mac = initMac(keys.get(2));
     	
         // Initialisation de l'algorithme de déchiffrement
         // Ici ECB mais application des étapes nécessaires pour faire un CBC avec un padding
         Cipher cipher = Cipher.getInstance("AES/ECB/NoPadding");
         // Choix du type (déchiffrement) avec initialisation de la clé
-        cipher.init(Cipher.DECRYPT_MODE, getSecretKey(keys.get(1)));
-        
-        // Récupération du ciphertext et de l'IV
-        byte[] cipherTextAndIV = new byte[fileData.length - MAC_SIZE];
-        System.arraycopy(fileData, 0, cipherTextAndIV, 0, fileData.length - MAC_SIZE);
+        cipher.init(Cipher.DECRYPT_MODE, getSecretKey(keys.get(0)));
 
-		// Préparation du CMAC avec les données suivantes : ciphertext || iv
-		mac.update(cipherTextAndIV,0,cipherTextAndIV.length);
+        // Création de l'instance du MAC
+        Mac mac = initMac(keys.get(1));
+		// Préparation du CMAC avec les données chiffrées
+		mac.update(fileData, 0, fileData.length);
 		// Initialisation du tableau qui récupérera le CMAC
 		byte[] macResult = new byte[mac.getMacSize()];
 		// Calcul du CMAC et nous donne le résultat dans le tableau macResult
 		mac.doFinal(macResult, 0);
   		
   		// On compare le CMAC récupéré dans le fichier et celui calculé
-            // si c'est le même on peut déchiffrer le ciphertext
-            // sinon : probleme d'intégrité, le ciphertext et/ou l'IV a été altéré, ce n'est pas la peine de tenter de déchiffrer ce fichier, il faut le redemander
+        // Si c'est le même, on peut déchiffrer le ciphertext
+        // Sinon, problème d'intégrité, le ciphertext et/ou l'IV ont été altéré
 		try {
             if (!MessageDigest.isEqual(receivedMAC, macResult))
                 throw new FileIntegrityException();
         } catch (Exception e) { System.exit(0); }
-		
-        // Initialisation d'un tableau pour les données chiffrées sans l'IV
-		byte[] newFileData = new byte[fileData.length - BLOCK_SIZE - MAC_SIZE];
-		// Copie les données chiffrées sans l'IV
-        System.arraycopy(fileData, 0, newFileData, 0, newFileData.length);
 
         // Tableau permettant de garder une copie du bloc pendant le processus
         byte[] tampon = new byte[BLOCK_SIZE];
         // Initialisation de deux tableaux permettant de conserver les blocs pour les étapes suivantes
         byte[][] tempData = new byte[2][BLOCK_SIZE];
+        System.arraycopy(IV, 0, tempData[1], 0, tempData[1].length);
+
         // Itération sur chaque bloc des données du fichier
-        for (int i = 0; i < newFileData.length; i += BLOCK_SIZE) {
+        for (int i = 0; i < fileData.length - (2 * BLOCK_SIZE); i += BLOCK_SIZE) {
             // Copie le bloc 'i' du fichier dans le tableau '0'
-            System.arraycopy(newFileData, i, tempData[0], 0, tempData[0].length);
+            System.arraycopy(fileData, i, tempData[0], 0, tempData[0].length);
             // Copie le bloc 'i' du fichier dans le tableau 'tampon'
-            System.arraycopy(newFileData, i, tampon, 0, tampon.length);
+            System.arraycopy(fileData, i, tampon, 0, tampon.length);
             // Met à jour les données fu fichier avec le chiffrement AES suivi du résultat du XOR
             // S'il s'agit de la première itération alors on XOR avec l'IV sinon avec le bloc précédent
-            System.arraycopy(xor(cipher.doFinal(tempData[0]), (i == 0) ? IV : tempData[1]), 0, newFileData, i, tempData[0].length);
+            System.arraycopy(xor(cipher.doFinal(tempData[0]), (i == 0) ? IV : tempData[1]), 0, fileData, i, tempData[0].length);
             // Récupère le bloc sauvegardé dans tampon pour l'utiliser au prochain tour
             System.arraycopy(tampon, 0, tempData[1], 0, tempData[1].length);
         }
+
+        // Effectue les opérations CTS pour garder un fichier intact niveau taille
+        byte[] ctsBlock = computeCTS(fileData, cipher, tempData[1], false);
+        // Remplace les deux dernier blocs du fichier par les blocs précédents
+        System.arraycopy(ctsBlock, 0, fileData, fileData.length - ctsBlock.length, ctsBlock.length);
         
         // On efface les données des clés en mémoire
+ 		Arrays.fill(key, (byte) 0);
  		Arrays.fill(keys.get(0), (byte) 0);
  		Arrays.fill(keys.get(1), (byte) 0);
- 		Arrays.fill(keys.get(2), (byte) 0);
 
         // Renvoie les données déchiffrées sans le padding
-        return removePadding(newFileData);
+        return fileData;
     }
 
     // Transforme une chaîne de caractères (hexadécimaux) en tableau d'octets
