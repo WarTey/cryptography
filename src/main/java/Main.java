@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class Main {
@@ -37,12 +38,21 @@ public class Main {
             // Crée l'archive avec les données précédentes
             FileManager.createArchive(inputFiles, filesData, fileOutput, encryptData);
         } else if (encryptionType.equals("decryption")) {
-            ArrayList<File> files = FileManager.extractArchive(new File(inputFiles.get(0)));
-            for (int i = 0; i < files.size(); i++) {
-                byte[] fileData = Files.readAllBytes(files.get(i).toPath());
-                //filesData.add(Cryptography.decrypt(fileData, Cryptography.hexStringToByteArray(key)));
-                //FileManager.createArchive(inputFiles, filesData, fileOutput, null);
-            }
+            if (fileOutput.mkdir()) {
+                FileManager.extractArchive(inputFiles.get(0), fileOutput.getPath());
+                ArrayList<String> names = FileManager.extractNamesFromArchive(new File(inputFiles.get(0)));
+                File fileEncrypt = new File(fileOutput.getPath() + File.separator + names.get(names.size() - 1));
+                byte[] encryptsData = Files.readAllBytes(fileEncrypt.toPath());
+                byte[] encryptData = new byte[BLOCK_SIZE * 2];
+                for (int i = 0; i < names.size() - 1; i++) {
+                    File fileInput = new File(fileOutput.getPath() + File.separator + names.get(i));
+                    byte[] fileData = Files.readAllBytes(fileInput.toPath());
+                    System.arraycopy(encryptsData, i * BLOCK_SIZE * 2, encryptData, 0, encryptData.length);
+                    Files.write(fileInput.toPath(), Cryptography.decrypt(fileData, Cryptography.hexStringToByteArray(key), encryptData));
+                }
+                new File(fileOutput.getPath() + File.separator + names.get(names.size() - 1)).delete();
+            } else
+                System.out.println("Une erreur est survenue lors de la création du dossier.");
         }
         System.out.println("Fin d'exécution.");
     }
@@ -57,10 +67,10 @@ public class Main {
         // Vérifie que les arguments existent
         if (encryptionType != null && key != null && inputFiles != null && outputFile != null) {
             // Initialise le fichier de sortie
-            File fileOutput = new File(outputFile + ".zip");
+            File fileOutput = new File(outputFile);
 
             // Vérifie que les fichiers d'entrées soient corrects
-            if (FileManager.isInputFilesReady(inputFiles, encryptionType)) {
+            if (FileManager.isInputFilesReady(inputFiles, fileOutput, encryptionType)) {
                 // Vérifie que le fichier de sortie n'existe pas
                 if (!fileOutput.exists())
                     // Lance de processus de chiffrement/déchiffrement
