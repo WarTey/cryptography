@@ -1,4 +1,5 @@
 import java.io.*;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -31,7 +32,7 @@ public class FileManager {
     }
 
     // Vérifie l'ensemble des fichiers d'entrées
-    public static Boolean isInputFilesReady(ArrayList<String> inputFiles, String encryptionType) {
+    public static Boolean isInputFilesReady(ArrayList<String> inputFiles, String encryptionType) throws IOException {
         // Pour le déchiffrement, vérifie que le fichier d'entrée est une archive
         if (encryptionType.equals("decryption") && !isArchive(new File(inputFiles.get(0)))) {
             System.out.println("Attention, lors d'un déchiffrement, le paramètre d'entrée doit être une archive au format zip.");
@@ -59,6 +60,10 @@ public class FileManager {
             // Vérifie que le fichier ne possède pas un nom réservé
             } else if (fileInput.getName().equals(RESERVED_NAME)) {
                 System.out.println("Attention, un des fichiers d'entrées utilise un nom réservé (" + fileInput.getName() + ").");
+                return false;
+            // Vérifie que la taille du fichier soit suffisante
+            } else if (Files.readAllBytes(fileInput.toPath()).length < 16) {
+                System.out.println("Attention, le fichier (" + fileInput.getName() + ") est impossible à lire.");
                 return false;
             // Rajoute le fichier au tableau 'des doublons'
             } else duplicate.add(fileInput.getName());
