@@ -88,22 +88,24 @@ public class FileManager {
         }
 
         // Dans le cas où le fichier de sortie existe et qu'il s'agit bien d'un fichier
-        if (fileOutput.exists() && fileOutput.isFile()) {
-            String answer;
-            do {
-                // Demande à l'utilisateur s'il est possible d'écraser le fichier de sortie
-                System.out.println("Attention, le fichier de sortie existe déjà. Voulez-vous l'écraser? (Y/N)");
-                // Récupère l'entrée de l'utilisateur
-                answer = new Scanner(System.in).next();
-            } while (!answer.equals("Y") && !answer.equals("N"));
-            // Selon sa réponse, arrête de programme
-            if (!answer.equals("Y") || (!fileOutput.delete())) {
-                System.out.println("Processus interrompu.");
+        if (fileOutput.exists()) {
+            if (fileOutput.isFile()) {
+                String answer;
+                do {
+                    // Demande à l'utilisateur s'il est possible d'écraser le fichier de sortie
+                    System.out.println("Attention, le fichier de sortie existe déjà. Voulez-vous l'écraser? (Y/N)");
+                    // Récupère l'entrée de l'utilisateur
+                    answer = new Scanner(System.in).next();
+                } while (!answer.equals("Y") && !answer.equals("N"));
+                // Selon sa réponse, arrête de programme
+                if (!answer.equals("Y") || (!fileOutput.delete())) {
+                    System.out.println("Processus interrompu.");
+                    return false;
+                }
+            } else {
+                System.out.println("Attention, le fichier de sortie est un dossier.");
                 return false;
             }
-        } else {
-            System.out.println("Attention, le fichier de sortie est un dossier.");
-            return false;
         }
         return true;
     }
