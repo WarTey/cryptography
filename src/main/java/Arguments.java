@@ -61,7 +61,6 @@ public class Arguments {
                     // Vérifie si l'argument suivant existe, s'il ne s'agit pas d'un paramètre et sauvegarde sa valeur
                     if (args[j] != null && args[j].length() > 0 && !Arrays.asList(PARAMETERS).contains(args[j]))
                         inputs.add(args[j]);
-                        // Dans le cas où l'argument qui suit est un paramètre renvoie null
                     else return inputs;
                 }
         // Renvoie null si rien
@@ -71,16 +70,19 @@ public class Arguments {
     // Renvoie l'aide pour les arguments
     public static String helpArguments () {
         String space = "    ";
-        // Exemple d'usage: filecrypt -enc|-dec -key K..K -in <input file> -out <output file>
+        // Exemple d'usage: java -jar release-X.jar -enc|-dec -key K..K -in <input file> -out <output file>
         String errorMessage = "\nExample usage:\n";
-        errorMessage += space + "java -jar release-X.jar -enc|-dec -key K..K -in <input file> -out <output file>\n\n";
-        // Description des arguments (à quoi ils correspondent)
+        errorMessage += space + "java -jar release-X.jar -enc|-dec -key K..K -in <input file(s)> -out <output file>\n\n";
+        // Description des arguments
         errorMessage += "Arguments:\n";
         errorMessage += space + "-enc: encryption\n";
         errorMessage += space + "-dec: decryption\n";
         errorMessage += space + "-key: secret key (48 characters)\n";
-        errorMessage += space + "-in: input files\n";
-        errorMessage += space + "-out: output file (different from the input file)\n";
+        errorMessage += space + "-in: input file(s)\n";
+        errorMessage += space + "-out: output file (different from input files)\n\n";
+        // Plus d'informations
+        errorMessage += "With encryption mode, you can send multiples files in input and an archive in output.\n";
+        errorMessage += "With decryption mode, you can an archive in input and a non-existent folder in output.\n";
         // Renvoie le message d'aide
         return errorMessage;
     }

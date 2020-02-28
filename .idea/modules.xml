@@ -2,9 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Cryptography.iml" filepath="$PROJECT_DIR$/.idea/modules/Cryptography.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Cryptography.main.iml" filepath="$PROJECT_DIR$/.idea/modules/Cryptography.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/Cryptography.test.iml" filepath="$PROJECT_DIR$/.idea/modules/Cryptography.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/Cryptography.iml" filepath="$PROJECT_DIR$/.idea/Cryptography.iml" />
     </modules>
   </component>
 </project>
