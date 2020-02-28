@@ -52,7 +52,7 @@ public class Main {
                     byte[] fileData = Files.readAllBytes(fileInput.toPath());
                     // Récupère les informations de déchiffrement de ce fichier
                     System.arraycopy(encryptsData, i * Cryptography.BLOCK_SIZE * 2, encryptData, 0, encryptData.length);
-                    // Déchiffrement le fichier et le sauvegarde dans le dossier
+                    // Déchiffre le fichier et le sauvegarde dans le dossier
                     Files.write(fileInput.toPath(), Cryptography.decrypt(fileData, Cryptography.hexStringToByteArray(key), encryptData));
                 }
                 // Supprime le fichier contenant les informations de déchiffrement
@@ -64,7 +64,7 @@ public class Main {
     }
 
     public static void main(String[] args) throws Exception {
-        // Récupère les arguments (type de chiffrement, clé, fichier d'entrée et de sortie)
+        // Récupère les arguments (type de chiffrement, clé, fichier(s) d'entrées et de sortie)
         String encryptionType = Arguments.getEncryptionType(args);
         String key = Arguments.getKey(args);
         ArrayList<String> inputFiles = Arguments.getInputFile(args);
@@ -75,7 +75,7 @@ public class Main {
             // Initialise le fichier de sortie
             File fileOutput = new File(outputFile);
 
-            // Vérifie que le fichier de sortie et les fichiers d'entrées
+            // Vérifie le fichier de sortie et les fichiers d'entrées
             if (FileManager.isInputFilesReady(inputFiles, encryptionType) && FileManager.isOutputFilesReady(fileOutput, encryptionType))
                 // Lance de processus de chiffrement/déchiffrement
                 process(inputFiles, fileOutput, encryptionType, key);
