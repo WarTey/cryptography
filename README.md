@@ -8,9 +8,9 @@ Tout OS ayant java installé.
 
 ## Utilisation
 
-Récupérer le fichier release-4.0-SNAPSHOT.jar dans le dossier release, ouvrez votre terminal préféré et saisissez la commande :
+Récupérer le fichier release-X.0-SNAPSHOT.jar dans le dossier release, ouvrez votre terminal préféré et saisissez la commande :
 ```bash
-java -jar release-4.0-SNAPSHOT.jar -enc|-dec -key K..K -in <input file> -out <output file>
+java -jar release-X.0-SNAPSHOT.jar -enc|-dec -key K..K -in <input file> -out <output file>
 ```
 Un message d'aide s'affichera pour vous montrer à quoi correspondent les différents arguments et ainsi chiffrer ou déchiffrer vos données.
 À noter que la clé secrète est au format hexadécimal donc seuls les chiffres et caractères de a/A à f/F sont autorisés.
